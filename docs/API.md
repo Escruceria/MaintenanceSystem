@@ -97,6 +97,9 @@ curl.exe -X POST http://localhost:4000/api/invitations/<invitationId>/cancel `
 - `GET /api/audit`
 
 Sin token deben responder `401`.
+Con token valido pero sin permiso deben responder `403`.
+
+La matriz de permisos esta documentada en `docs/PERMISSIONS.md`.
 
 ## Convenciones futuras
 

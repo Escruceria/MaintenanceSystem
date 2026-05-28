@@ -154,8 +154,16 @@ Entregables:
 
 - Decorador `@Permissions`. Estado: base implementada.
 - Guard de permisos. Estado: base implementada.
-- Seed ampliado de roles y permisos.
-- Documentacion de permisos.
+- Seed ampliado de roles y permisos. Estado: implementado.
+- Documentacion de permisos. Estado: implementado.
+- Aplicacion en endpoints operativos actuales. Estado: implementado.
+
+Pendiente futuro:
+
+- CRUD de roles.
+- CRUD de permisos.
+- Asignacion de roles desde el CRUD de usuarios.
+- Politicas por sede o alcance organizacional.
 
 ## Fase 5 - Invitaciones de usuario
 

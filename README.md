@@ -29,6 +29,7 @@ Plataforma moderna de gestion de mantenimiento construida con NestJS, Next.js, P
 - [Desarrollo local](docs/DEVELOPMENT.md)
 - [API](docs/API.md)
 - [Autenticacion y usuarios](docs/AUTHENTICATION.md)
+- [Roles y permisos](docs/PERMISSIONS.md)
 - [Base de datos](docs/DATABASE.md)
 - [Seguridad](docs/SECURITY.md)
 - [Flujo Git](docs/GIT_WORKFLOW.md)

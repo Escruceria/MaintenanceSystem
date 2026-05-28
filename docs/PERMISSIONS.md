@@ -1,0 +1,137 @@
+# Roles y Permisos
+
+## Enfoque
+
+MaintenanceSystem usa autenticacion JWT y autorizacion por permisos.
+
+Tener un token valido no es suficiente para ejecutar acciones operativas. Cada endpoint protegido debe declarar el permiso requerido mediante `@Permissions(...)` y usar `PermissionsGuard`.
+
+## Roles iniciales
+
+### ADMIN
+
+Administrador total del sistema.
+
+Permisos: todos.
+
+### MAINTENANCE_MANAGER
+
+Responsable de mantenimiento. Puede gestionar la operacion principal.
+
+Permisos principales:
+
+- Usuarios: lectura.
+- Ubicaciones: lectura y escritura.
+- Activos: lectura y escritura.
+- Ordenes de trabajo: lectura, escritura, asignacion y cierre.
+- Planes de mantenimiento: lectura y escritura.
+- Solicitudes: lectura y escritura.
+- Inventario: lectura.
+- Proveedores: lectura.
+- Reportes: lectura.
+
+### TECHNICIAN
+
+Tecnico de mantenimiento.
+
+Permisos principales:
+
+- Ubicaciones: lectura.
+- Activos: lectura.
+- Ordenes de trabajo: lectura y escritura.
+- Solicitudes: lectura.
+- Inventario: lectura.
+
+### REQUESTER
+
+Usuario solicitante.
+
+Permisos principales:
+
+- Activos: lectura.
+- Solicitudes: lectura y escritura.
+
+### INVENTORY_MANAGER
+
+Responsable de inventario.
+
+Permisos principales:
+
+- Inventario: lectura y escritura.
+- Proveedores: lectura y escritura.
+- Reportes: lectura.
+
+### AUDITOR
+
+Usuario auditor.
+
+Permisos principales:
+
+- Lectura transversal de usuarios, ubicaciones, activos, ordenes, planes, solicitudes, inventario, proveedores y reportes.
+- Auditoria: lectura.
+
+### REPORT_VIEWER
+
+Usuario de consulta gerencial.
+
+Permisos principales:
+
+- Reportes: lectura.
+- Activos: lectura.
+- Ordenes de trabajo: lectura.
+
+## Permisos iniciales
+
+| Permiso                   | Uso                                                       |
+| ------------------------- | --------------------------------------------------------- |
+| `users:read`              | Leer usuarios e invitaciones                              |
+| `users:write`             | Crear, actualizar, activar, desactivar e invitar usuarios |
+| `roles:read`              | Leer roles y permisos                                     |
+| `roles:write`             | Administrar roles y permisos                              |
+| `locations:read`          | Leer sedes, areas y ubicaciones                           |
+| `locations:write`         | Crear y actualizar sedes, areas y ubicaciones             |
+| `assets:read`             | Leer activos y equipos                                    |
+| `assets:write`            | Crear y actualizar activos y equipos                      |
+| `work-orders:read`        | Leer ordenes de trabajo                                   |
+| `work-orders:write`       | Crear y actualizar ordenes de trabajo                     |
+| `work-orders:assign`      | Asignar ordenes de trabajo                                |
+| `work-orders:close`       | Cerrar ordenes de trabajo                                 |
+| `maintenance-plans:read`  | Leer planes de mantenimiento                              |
+| `maintenance-plans:write` | Crear y actualizar planes de mantenimiento                |
+| `requests:read`           | Leer solicitudes de servicio                              |
+| `requests:write`          | Crear y actualizar solicitudes de servicio                |
+| `inventory:read`          | Leer inventario y repuestos                               |
+| `inventory:write`         | Crear y actualizar inventario y repuestos                 |
+| `suppliers:read`          | Leer proveedores                                          |
+| `suppliers:write`         | Crear y actualizar proveedores                            |
+| `reports:read`            | Leer reportes e indicadores                               |
+| `reports:export`          | Exportar reportes                                         |
+| `audit:read`              | Leer auditoria del sistema                                |
+| `settings:manage`         | Administrar configuracion del sistema                     |
+
+## Endpoints protegidos actualmente
+
+| Endpoint                           | Permiso requerido        |
+| ---------------------------------- | ------------------------ |
+| `GET /api/users`                   | `users:read`             |
+| `GET /api/invitations`             | `users:read`             |
+| `POST /api/invitations`            | `users:write`            |
+| `POST /api/invitations/:id/cancel` | `users:write`            |
+| `GET /api/locations`               | `locations:read`         |
+| `GET /api/assets`                  | `assets:read`            |
+| `GET /api/work-orders`             | `work-orders:read`       |
+| `GET /api/maintenance-plans`       | `maintenance-plans:read` |
+| `GET /api/requests`                | `requests:read`          |
+| `GET /api/inventory/spare-parts`   | `inventory:read`         |
+| `GET /api/suppliers`               | `suppliers:read`         |
+| `GET /api/reports/summary`         | `reports:read`           |
+| `GET /api/audit`                   | `audit:read`             |
+
+## Reglas de implementacion
+
+- Todo endpoint operativo protegido debe usar `JwtAuthGuard` y `PermissionsGuard`.
+- Todo endpoint operativo debe declarar al menos un permiso con `@Permissions(...)`.
+- Los permisos deben estar en el seed para que sean reproducibles en cualquier ambiente.
+- Los roles deben ser configurables en base de datos, pero el seed mantiene una matriz inicial segura.
+- Un usuario sin rol puede autenticarse, pero no debe poder acceder a rutas operativas.
+- Las rutas publicas deben ser excepciones explicitas, por ejemplo `POST /api/auth/login`, `POST /api/auth/refresh` y `POST /api/invitations/accept`.

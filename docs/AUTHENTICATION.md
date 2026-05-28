@@ -94,4 +94,12 @@ Las invitaciones protegidas usan:
 - `users:write` para crear y cancelar invitaciones.
 - `users:read` para listar invitaciones.
 
-El siguiente bloque de trabajo es ampliar permisos granulares y aplicar guards por permiso en todos los modulos operativos.
+Los modulos operativos usan `JwtAuthGuard` y `PermissionsGuard`.
+
+Regla general:
+
+- Sin token: `401 Unauthorized`.
+- Con token valido pero sin permiso: `403 Forbidden`.
+- Con token valido y permiso requerido: acceso permitido.
+
+La matriz completa esta documentada en `docs/PERMISSIONS.md`.

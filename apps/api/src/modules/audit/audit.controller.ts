@@ -1,12 +1,15 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { Controller, Get, UseGuards } from "@nestjs/common";
+import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
+import { Permissions } from "../auth/decorators/permissions.decorator";
+import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
+import { PermissionsGuard } from "../auth/guards/permissions.guard";
 
-@ApiTags('audit')
+@ApiTags("audit")
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
-@Controller('audit')
+@UseGuards(JwtAuthGuard, PermissionsGuard)
+@Controller("audit")
 export class AuditController {
+  @Permissions("audit:read")
   @Get()
   findAll() {
     return [];
