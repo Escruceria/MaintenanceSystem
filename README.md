@@ -2,6 +2,17 @@
 
 Plataforma moderna de gestion de mantenimiento construida con NestJS, Next.js, PostgreSQL, Prisma y Docker.
 
+## Estado actual
+
+- Backend NestJS con modulos base.
+- Frontend Next.js con dashboard inicial.
+- PostgreSQL local y PostgreSQL Docker soportados.
+- Prisma con migraciones versionadas.
+- Autenticacion JWT con refresh token.
+- Usuario administrador inicial.
+- Docker Compose funcional.
+- Repositorio remoto configurado en GitHub.
+
 ## Arquitectura
 
 - `apps/api`: backend NestJS con API REST, Prisma, autenticacion y modulos del dominio.
@@ -9,14 +20,42 @@ Plataforma moderna de gestion de mantenimiento construida con NestJS, Next.js, P
 - `packages`: espacio reservado para librerias compartidas.
 - `docker-compose.yml`: PostgreSQL y servicios de desarrollo.
 
-## Base de datos local
+## Documentacion
 
-El proyecto esta configurado para usar PostgreSQL local en `localhost:5432`.
+- [Docker Runbook](DOCKER_RUNBOOK.md)
+- [Arquitectura](docs/ARCHITECTURE.md)
+- [Desarrollo local](docs/DEVELOPMENT.md)
+- [API](docs/API.md)
+- [Autenticacion y usuarios](docs/AUTHENTICATION.md)
+- [Base de datos](docs/DATABASE.md)
+- [Seguridad](docs/SECURITY.md)
+- [Flujo Git](docs/GIT_WORKFLOW.md)
+- [Roadmap](docs/ROADMAP.md)
+
+## Ejecucion rapida con Docker
+
+```bash
+docker compose up -d --build
+```
+
+Servicios:
+
+- Web: `http://localhost:3000`
+- API: `http://localhost:4000`
+- Swagger: `http://localhost:4000/docs`
+- Health: `http://localhost:4000/api/health`
+- PostgreSQL Docker: `localhost:5433`
+
+## Base de datos
+
+El proyecto puede usar:
+
+- PostgreSQL local en `localhost:5432`
+- PostgreSQL Docker en `localhost:5433`
+
 La base inicial es `maintenance_system` y las migraciones viven en `apps/api/prisma/migrations`.
 
-Docker queda como opcion para entornos aislados, pero no es obligatorio si PostgreSQL ya esta instalado localmente.
-
-## Primeros comandos
+## Primeros comandos sin Docker
 
 ```bash
 npm install
@@ -55,3 +94,17 @@ Endpoints principales:
 
 Las rutas operativas quedan protegidas con `Authorization: Bearer <accessToken>`.
 En produccion se debe cambiar la clave inicial y configurar secretos fuertes en `.env`.
+
+## Git
+
+Repositorio remoto:
+
+```txt
+https://github.com/Escruceria/MaintenanceSystem.git
+```
+
+Subir cambios:
+
+```bash
+git push
+```

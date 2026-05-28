@@ -1,0 +1,88 @@
+# Base de Datos
+
+## Motor
+
+PostgreSQL es la base de datos principal.
+
+Entornos:
+
+- PostgreSQL local Windows: `localhost:5432`
+- PostgreSQL Docker: `localhost:5433`
+
+## ORM
+
+Prisma define el modelo en:
+
+```txt
+apps/api/prisma/schema.prisma
+```
+
+Las migraciones viven en:
+
+```txt
+apps/api/prisma/migrations
+```
+
+## Base principal
+
+```txt
+maintenance_system
+```
+
+## Modelos actuales
+
+- `User`
+- `Role`
+- `Permission`
+- `UserRole`
+- `RolePermission`
+- `RefreshToken`
+- `Location`
+- `Asset`
+- `WorkOrder`
+- `MaintenancePlan`
+- `ServiceRequest`
+- `SparePart`
+- `WorkOrderPart`
+- `Supplier`
+- `AuditEvent`
+
+## Crear migracion en desarrollo
+
+```powershell
+npm run db:migrate -w apps/api -- --name nombre_de_la_migracion
+```
+
+## Aplicar migraciones en Docker/produccion
+
+```powershell
+docker compose exec api npx prisma migrate deploy --schema=apps/api/prisma/schema.prisma
+```
+
+## Generar cliente Prisma
+
+```powershell
+npm run prisma:generate
+```
+
+## Ejecutar seed
+
+Local:
+
+```powershell
+npm run db:seed -w apps/api
+```
+
+Docker:
+
+```powershell
+docker compose exec api sh -c "cd apps/api && npm run db:seed"
+```
+
+## Convenciones
+
+- No editar la base manualmente si el cambio pertenece al modelo.
+- Todo cambio estructural debe quedar como migracion Prisma.
+- No subir passwords reales en `.env`.
+- `pws_bd.txt` es local y esta ignorado por Git.
+
