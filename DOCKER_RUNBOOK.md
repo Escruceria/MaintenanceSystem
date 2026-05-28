@@ -2,6 +2,14 @@
 
 ## Levantar stack completo
 
+Desde PowerShell, primero ubicarse en la carpeta del proyecto:
+
+```powershell
+cd C:\proyectos\MaintenanceSystem
+```
+
+Luego levantar el stack:
+
 ```bash
 docker compose up -d --build
 ```
@@ -18,22 +26,24 @@ docker compose ps
 docker compose logs -f
 ```
 
+Para salir de los logs en vivo, presionar `Ctrl + C`.
+
 Logs solo de la API:
 
 ```bash
-docker logs -f maintenance-api
+docker compose logs -f api
 ```
 
 Logs solo del frontend:
 
 ```bash
-docker logs -f maintenance-web
+docker compose logs -f web
 ```
 
 Logs solo de PostgreSQL:
 
 ```bash
-docker logs -f maintenance-postgres
+docker compose logs -f postgres
 ```
 
 ## URLs locales
@@ -67,7 +77,15 @@ Password: maintenance
 
 ## Ejecutar seed inicial
 
+Desde el contenedor API:
+
 ```bash
+docker compose exec api npm run db:seed -w apps/api
+```
+
+Desde Windows/PowerShell contra PostgreSQL Docker:
+
+```powershell
 $env:DATABASE_URL="postgresql://maintenance:maintenance@localhost:5433/maintenance_system?schema=public"
 npm run db:seed -w apps/api
 ```
@@ -76,6 +94,12 @@ npm run db:seed -w apps/api
 
 ```bash
 docker compose exec api npx prisma migrate deploy --schema apps/api/prisma/schema.prisma
+```
+
+Forma equivalente:
+
+```bash
+docker compose exec api npx prisma migrate deploy --schema=apps/api/prisma/schema.prisma
 ```
 
 ## Detener stack
@@ -106,8 +130,31 @@ docker compose up -d --build web
 
 ## Probar login desde PowerShell
 
+Probar health API:
+
+```powershell
+curl.exe http://localhost:4000/api/health
+```
+
+Login administrador en varias lineas:
+
+```powershell
+curl.exe -X POST http://localhost:4000/api/auth/login `
+  -H "Content-Type: application/json" `
+  -d "{\"email\":\"admin@maintenance.local\",\"password\":\"Admin123*\"}"
+```
+
+Login administrador en una sola linea:
+
+```powershell
+curl.exe -X POST http://localhost:4000/api/auth/login -H "Content-Type: application/json" -d "{\"email\":\"admin@maintenance.local\",\"password\":\"Admin123*\"}"
+```
+
+Alternativa con `Invoke-RestMethod`:
+
 ```powershell
 $body = @{ email = "admin@maintenance.local"; password = "Admin123*" } | ConvertTo-Json
 Invoke-RestMethod -Uri http://localhost:4000/api/auth/login -Method Post -ContentType "application/json" -Body $body
 ```
 
+Nota para PowerShell: para partir comandos en varias lineas se usa backtick `` ` ``, no barra invertida `\`.
