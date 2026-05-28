@@ -1,0 +1,223 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  INVITED
+}
+
+enum AssetStatus {
+  ACTIVE
+  IN_MAINTENANCE
+  OUT_OF_SERVICE
+  RETIRED
+}
+
+enum WorkOrderStatus {
+  DRAFT
+  OPEN
+  ASSIGNED
+  IN_PROGRESS
+  ON_HOLD
+  COMPLETED
+  CANCELLED
+}
+
+enum WorkOrderPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum MaintenanceType {
+  CORRECTIVE
+  PREVENTIVE
+  PREDICTIVE
+  INSPECTION
+}
+
+model User {
+  id             String          @id @default(uuid())
+  email          String          @unique
+  name           String
+  passwordHash   String
+  status         UserStatus      @default(INVITED)
+  roles          UserRole[]
+  refreshTokens  RefreshToken[]
+  assignedOrders WorkOrder[]     @relation("AssignedTechnician")
+  requestedItems ServiceRequest[]
+  auditEvents    AuditEvent[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+}
+
+model RefreshToken {
+  id        String    @id @default(uuid())
+  tokenHash String
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+}
+
+model Role {
+  id          String           @id @default(uuid())
+  name        String           @unique
+  description String?
+  users       UserRole[]
+  permissions RolePermission[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+}
+
+model Permission {
+  id          String           @id @default(uuid())
+  key         String           @unique
+  description String?
+  roles       RolePermission[]
+}
+
+model UserRole {
+  userId String
+  roleId String
+  user   User   @relation(fields: [userId], references: [id])
+  role   Role   @relation(fields: [roleId], references: [id])
+
+  @@id([userId, roleId])
+}
+
+model RolePermission {
+  roleId       String
+  permissionId String
+  role         Role       @relation(fields: [roleId], references: [id])
+  permission   Permission @relation(fields: [permissionId], references: [id])
+
+  @@id([roleId, permissionId])
+}
+
+model Location {
+  id        String     @id @default(uuid())
+  name      String
+  code      String     @unique
+  parentId  String?
+  parent    Location?  @relation("LocationTree", fields: [parentId], references: [id])
+  children  Location[] @relation("LocationTree")
+  assets    Asset[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+model Asset {
+  id             String          @id @default(uuid())
+  code           String          @unique
+  name           String
+  description    String?
+  serialNumber   String?
+  brand          String?
+  model          String?
+  status         AssetStatus     @default(ACTIVE)
+  locationId     String?
+  location       Location?       @relation(fields: [locationId], references: [id])
+  workOrders     WorkOrder[]
+  requests       ServiceRequest[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+}
+
+model WorkOrder {
+  id                   String            @id @default(uuid())
+  number               String            @unique
+  title                String
+  description          String?
+  type                 MaintenanceType
+  priority             WorkOrderPriority @default(MEDIUM)
+  status               WorkOrderStatus   @default(OPEN)
+  assetId              String
+  asset                Asset             @relation(fields: [assetId], references: [id])
+  assignedTechnicianId String?
+  assignedTechnician   User?             @relation("AssignedTechnician", fields: [assignedTechnicianId], references: [id])
+  scheduledAt          DateTime?
+  startedAt            DateTime?
+  completedAt          DateTime?
+  spareParts           WorkOrderPart[]
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+}
+
+model MaintenancePlan {
+  id          String          @id @default(uuid())
+  name        String
+  description String?
+  type        MaintenanceType @default(PREVENTIVE)
+  frequency   String
+  isActive    Boolean         @default(true)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+}
+
+model ServiceRequest {
+  id          String    @id @default(uuid())
+  title       String
+  description String?
+  assetId     String?
+  asset       Asset?    @relation(fields: [assetId], references: [id])
+  requesterId String?
+  requester   User?     @relation(fields: [requesterId], references: [id])
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model SparePart {
+  id              String          @id @default(uuid())
+  sku             String          @unique
+  name            String
+  description     String?
+  unit            String
+  stock           Int             @default(0)
+  minimumStock    Int             @default(0)
+  workOrderUsages WorkOrderPart[]
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+}
+
+model WorkOrderPart {
+  workOrderId String
+  sparePartId String
+  quantity    Int
+  workOrder   WorkOrder @relation(fields: [workOrderId], references: [id])
+  sparePart   SparePart @relation(fields: [sparePartId], references: [id])
+
+  @@id([workOrderId, sparePartId])
+}
+
+model Supplier {
+  id        String   @id @default(uuid())
+  name      String
+  taxId     String?  @unique
+  email     String?
+  phone     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AuditEvent {
+  id         String   @id @default(uuid())
+  actorId    String?
+  actor      User?    @relation(fields: [actorId], references: [id])
+  action     String
+  entityType String
+  entityId   String?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+}
