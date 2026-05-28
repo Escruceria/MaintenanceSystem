@@ -158,3 +158,44 @@ Invoke-RestMethod -Uri http://localhost:4000/api/auth/login -Method Post -Conten
 ```
 
 Nota para PowerShell: para partir comandos en varias lineas se usa backtick `` ` ``, no barra invertida `\`.
+
+## Probar invitaciones de usuario
+
+Crear una sesion de administrador:
+
+```powershell
+$loginBody = @{ email = "admin@maintenance.local"; password = "Admin123*" } | ConvertTo-Json
+$login = Invoke-RestMethod -Uri http://localhost:4000/api/auth/login -Method Post -ContentType "application/json" -Body $loginBody
+$headers = @{ Authorization = "Bearer $($login.accessToken)" }
+```
+
+Crear invitacion:
+
+```powershell
+$inviteBody = @{
+  email = "tecnico@maintenance.local"
+  name = "Tecnico de mantenimiento"
+  expiresInDays = 7
+} | ConvertTo-Json
+
+$invitation = Invoke-RestMethod -Uri http://localhost:4000/api/invitations -Method Post -Headers $headers -ContentType "application/json" -Body $inviteBody
+$invitation
+```
+
+Aceptar invitacion:
+
+```powershell
+$acceptBody = @{
+  token = $invitation.token
+  password = "Invitado123*"
+} | ConvertTo-Json
+
+Invoke-RestMethod -Uri http://localhost:4000/api/invitations/accept -Method Post -ContentType "application/json" -Body $acceptBody
+```
+
+Probar login del usuario invitado:
+
+```powershell
+$newLoginBody = @{ email = "tecnico@maintenance.local"; password = "Invitado123*" } | ConvertTo-Json
+Invoke-RestMethod -Uri http://localhost:4000/api/auth/login -Method Post -ContentType "application/json" -Body $newLoginBody
+```

@@ -44,19 +44,52 @@ enum MaintenanceType {
   INSPECTION
 }
 
+enum UserInvitationStatus {
+  PENDING
+  ACCEPTED
+  CANCELLED
+  EXPIRED
+}
+
 model User {
-  id             String          @id @default(uuid())
-  email          String          @unique
+  id                  String           @id @default(uuid())
+  email               String           @unique
+  name                String
+  passwordHash        String
+  status              UserStatus       @default(INVITED)
+  roles               UserRole[]
+  refreshTokens       RefreshToken[]
+  sentInvitations     UserInvitation[] @relation("InvitationInviter")
+  acceptedInvitations UserInvitation[] @relation("InvitationAcceptedUser")
+  assignedOrders      WorkOrder[]      @relation("AssignedTechnician")
+  requestedItems      ServiceRequest[]
+  auditEvents         AuditEvent[]
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+}
+
+model UserInvitation {
+  id             String               @id @default(uuid())
+  email          String
   name           String
-  passwordHash   String
-  status         UserStatus      @default(INVITED)
-  roles          UserRole[]
-  refreshTokens  RefreshToken[]
-  assignedOrders WorkOrder[]     @relation("AssignedTechnician")
-  requestedItems ServiceRequest[]
-  auditEvents    AuditEvent[]
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
+  tokenHash      String               @unique
+  status         UserInvitationStatus @default(PENDING)
+  roleId         String?
+  role           Role?                @relation(fields: [roleId], references: [id])
+  invitedById    String
+  invitedBy      User                 @relation("InvitationInviter", fields: [invitedById], references: [id])
+  acceptedUserId String?
+  acceptedUser   User?                @relation("InvitationAcceptedUser", fields: [acceptedUserId], references: [id])
+  expiresAt      DateTime
+  acceptedAt     DateTime?
+  cancelledAt    DateTime?
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+
+  @@index([email])
+  @@index([status])
+  @@index([roleId])
+  @@index([invitedById])
 }
 
 model RefreshToken {
@@ -77,6 +110,7 @@ model Role {
   description String?
   users       UserRole[]
   permissions RolePermission[]
+  invitations UserInvitation[]
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
 }
@@ -119,20 +153,20 @@ model Location {
 }
 
 model Asset {
-  id             String          @id @default(uuid())
-  code           String          @unique
-  name           String
-  description    String?
-  serialNumber   String?
-  brand          String?
-  model          String?
-  status         AssetStatus     @default(ACTIVE)
-  locationId     String?
-  location       Location?       @relation(fields: [locationId], references: [id])
-  workOrders     WorkOrder[]
-  requests       ServiceRequest[]
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
+  id           String           @id @default(uuid())
+  code         String           @unique
+  name         String
+  description  String?
+  serialNumber String?
+  brand        String?
+  model        String?
+  status       AssetStatus      @default(ACTIVE)
+  locationId   String?
+  location     Location?        @relation(fields: [locationId], references: [id])
+  workOrders   WorkOrder[]
+  requests     ServiceRequest[]
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
 }
 
 model WorkOrder {
@@ -167,15 +201,15 @@ model MaintenancePlan {
 }
 
 model ServiceRequest {
-  id          String    @id @default(uuid())
+  id          String   @id @default(uuid())
   title       String
   description String?
   assetId     String?
-  asset       Asset?    @relation(fields: [assetId], references: [id])
+  asset       Asset?   @relation(fields: [assetId], references: [id])
   requesterId String?
-  requester   User?     @relation(fields: [requesterId], references: [id])
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  requester   User?    @relation(fields: [requesterId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model SparePart {

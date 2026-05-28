@@ -21,6 +21,10 @@ Endpoints:
 - `POST /api/auth/refresh`
 - `POST /api/auth/logout`
 - `GET /api/auth/me`
+- `POST /api/invitations`
+- `GET /api/invitations`
+- `POST /api/invitations/accept`
+- `POST /api/invitations/:id/cancel`
 
 ## Usuario administrador inicial
 
@@ -62,14 +66,32 @@ Cuando se usa `/api/auth/refresh`:
 
 `POST /api/auth/logout` revoca el refresh token recibido.
 
-## Siguiente mejora recomendada
+## Registro seguro por invitacion
 
-Agregar registro por invitacion:
+El registro seguro por invitacion ya cuenta con:
 
 - Tabla `UserInvitation`.
 - Token aleatorio hasheado.
 - Fecha de expiracion.
-- Estado usado/no usado.
-- Endpoint para aceptar invitacion.
-- Envio futuro por correo.
+- Estados `PENDING`, `ACCEPTED`, `CANCELLED` y `EXPIRED`.
+- Endpoint protegido para crear invitacion.
+- Endpoint publico para aceptar una invitacion valida.
+- Creacion de password por el usuario invitado.
+- Asignacion opcional de rol inicial.
 
+Reglas:
+
+- No existe endpoint de registro publico libre.
+- El token plano solo se entrega al crear la invitacion y no se guarda en base de datos.
+- Si se crea una nueva invitacion para el mismo correo, las invitaciones pendientes anteriores se cancelan.
+- Una invitacion aceptada, cancelada o expirada no puede reutilizarse.
+- En produccion, el token debe enviarse por correo mediante un servicio transaccional.
+
+## Permisos actuales
+
+Las invitaciones protegidas usan:
+
+- `users:write` para crear y cancelar invitaciones.
+- `users:read` para listar invitaciones.
+
+El siguiente bloque de trabajo es ampliar permisos granulares y aplicar guards por permiso en todos los modulos operativos.

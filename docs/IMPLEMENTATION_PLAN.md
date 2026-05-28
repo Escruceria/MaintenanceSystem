@@ -17,6 +17,8 @@ Ya existe:
 - Autenticacion JWT.
 - Refresh token.
 - Usuario administrador inicial.
+- Registro seguro por invitacion.
+- Guard base por permisos.
 - Modulos base del backend.
 - Documentacion inicial.
 - Repositorio GitHub.
@@ -35,9 +37,20 @@ Faltan:
 - Proveedores asociados a activos.
 - Responsables de activos.
 - Planes asociados a activos.
-- Permisos granulares reales.
+- Permisos granulares aplicados a todos los modulos.
 - CRUDs completos.
 - Dashboard conectado a datos reales.
+
+## Orden de implementacion aprobado
+
+El desarrollo operativo continuara en este orden:
+
+1. Invitaciones de usuario: registro seguro por token, sin registro publico.
+2. Roles y permisos reales: guards por permiso, no solo JWT.
+3. CRUD de usuarios: crear, listar, activar/desactivar y asignar roles.
+4. CRUD de ubicaciones: sedes, areas y jerarquias.
+5. CRUD de activos/equipos: codigo, nombre, serial, marca, modelo, estado y ubicacion.
+6. Ordenes de trabajo: crear, asignar, cambiar estados y cerrar.
 
 ## Fase 1 - Documentacion del dominio
 
@@ -139,8 +152,8 @@ Permisos propuestos:
 
 Entregables:
 
-- Decorador `@Permissions`.
-- Guard de permisos.
+- Decorador `@Permissions`. Estado: base implementada.
+- Guard de permisos. Estado: base implementada.
 - Seed ampliado de roles y permisos.
 - Documentacion de permisos.
 
@@ -150,13 +163,20 @@ Objetivo: evitar registro publico libre.
 
 Entregables:
 
-- Modelo `UserInvitation`.
-- Token seguro hasheado.
-- Expiracion.
-- Estado usado/no usado.
-- Endpoint para crear invitacion.
-- Endpoint para aceptar invitacion.
-- Creacion de password por el usuario invitado.
+- Modelo `UserInvitation`. Estado: implementado.
+- Token seguro hasheado. Estado: implementado.
+- Expiracion. Estado: implementado.
+- Estados pendiente, aceptada, cancelada y expirada. Estado: implementado.
+- Endpoint para crear invitacion. Estado: implementado.
+- Endpoint para aceptar invitacion. Estado: implementado.
+- Endpoint para cancelar invitacion pendiente. Estado: implementado.
+- Creacion de password por el usuario invitado. Estado: implementado.
+
+Pendiente futuro:
+
+- Envio real de correos.
+- Pantalla frontend para aceptar invitaciones.
+- Politica avanzada de contrasenas.
 
 ## Fase 6 - Ordenes de trabajo
 
@@ -265,4 +285,3 @@ Entregables:
 - Actualizar documentacion con cada cambio relevante.
 - Verificar build de API y Web antes de push.
 - Probar migraciones y seed en Docker.
-
