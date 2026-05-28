@@ -80,7 +80,7 @@ Password: maintenance
 Desde el contenedor API:
 
 ```bash
-docker compose exec api npm run db:seed -w apps/api
+docker compose exec api sh -c "cd apps/api && npm run db:seed"
 ```
 
 Desde Windows/PowerShell contra PostgreSQL Docker:

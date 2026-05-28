@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import { hash } from 'bcryptjs';
+import * as bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
@@ -69,7 +69,7 @@ async function main() {
     create: {
       email: adminEmail,
       name: 'Administrador',
-      passwordHash: await hash(adminPassword, 12),
+      passwordHash: await bcrypt.hash(adminPassword, 12),
       status: 'ACTIVE',
     },
   });
@@ -99,4 +99,3 @@ main()
   .finally(async () => {
     await prisma.$disconnect();
   });
-
