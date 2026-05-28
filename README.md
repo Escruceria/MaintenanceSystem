@@ -24,6 +24,8 @@ Plataforma moderna de gestion de mantenimiento construida con NestJS, Next.js, P
 
 - [Docker Runbook](DOCKER_RUNBOOK.md)
 - [Arquitectura](docs/ARCHITECTURE.md)
+- [Modelo de dominio](docs/DOMAIN_MODEL.md)
+- [Plan de implementacion](docs/IMPLEMENTATION_PLAN.md)
 - [Desarrollo local](docs/DEVELOPMENT.md)
 - [API](docs/API.md)
 - [Autenticacion y usuarios](docs/AUTHENTICATION.md)
