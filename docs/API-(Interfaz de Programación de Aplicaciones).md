@@ -488,6 +488,40 @@ curl.exe -X PATCH http://localhost:4000/api/maintenance-plans/<planId> `
   -d "{\"frequencyType\":\"WEEKLY\",\"assetIds\":[\"<assetId>\"],\"tasks\":[{\"title\":\"Inspeccion semanal\",\"sortOrder\":1}]}"
 ```
 
+Agregar tarea al checklist:
+
+```powershell
+curl.exe -X POST http://localhost:4000/api/maintenance-plans/<planId>/tasks `
+  -H "Content-Type: application/json" `
+  -H "Authorization: Bearer <accessToken>" `
+  -d "{\"title\":\"Verificar nivel de aceite\",\"description\":\"Registrar condicion encontrada\",\"sortOrder\":1,\"isRequired\":true}"
+```
+
+Reemplazar checklist completo:
+
+```powershell
+curl.exe -X PUT http://localhost:4000/api/maintenance-plans/<planId>/tasks `
+  -H "Content-Type: application/json" `
+  -H "Authorization: Bearer <accessToken>" `
+  -d "{\"tasks\":[{\"title\":\"Inspeccionar estado general\",\"sortOrder\":1},{\"title\":\"Registrar evidencia\",\"sortOrder\":2}]}"
+```
+
+Actualizar una tarea del checklist:
+
+```powershell
+curl.exe -X PATCH http://localhost:4000/api/maintenance-plans/<planId>/tasks/<taskId> `
+  -H "Content-Type: application/json" `
+  -H "Authorization: Bearer <accessToken>" `
+  -d "{\"title\":\"Verificar nivel de aceite y fugas\",\"isRequired\":true}"
+```
+
+Eliminar una tarea del checklist:
+
+```powershell
+curl.exe -X DELETE http://localhost:4000/api/maintenance-plans/<planId>/tasks/<taskId> `
+  -H "Authorization: Bearer <accessToken>"
+```
+
 Asociar un activo al plan:
 
 ```powershell
@@ -550,6 +584,8 @@ Reglas:
 - Si no se envia `intervalDays`, la API asigna 1, 7, 30, 365 o 0 segun la frecuencia.
 - Los planes `ON_DATE` requieren `nextDueAt` y no calculan una siguiente fecha despues de generar orden.
 - Un plan puede tener varias tareas/checklist.
+- El checklist puede administrarse desde el CRUD del plan o desde rutas dedicadas.
+- Cada tarea tiene titulo, descripcion opcional, orden y marca de obligatoriedad.
 - Un plan puede estar asociado a varios activos.
 - La asociacion plan-activo puede administrarse desde el CRUD del plan o desde rutas dedicadas.
 - Solo se generan ordenes para activos en estado `ACTIVE`.
@@ -647,6 +683,10 @@ En Docker, el frontend usa `API_INTERNAL_URL=http://api:4000/api` para consultar
 - `PATCH /api/maintenance-plans/:id`
 - `PATCH /api/maintenance-plans/:id/activate`
 - `PATCH /api/maintenance-plans/:id/deactivate`
+- `POST /api/maintenance-plans/:id/tasks`
+- `PUT /api/maintenance-plans/:id/tasks`
+- `PATCH /api/maintenance-plans/:id/tasks/:taskId`
+- `DELETE /api/maintenance-plans/:id/tasks/:taskId`
 - `POST /api/maintenance-plans/:id/assets/:assetId`
 - `PUT /api/maintenance-plans/:id/assets`
 - `DELETE /api/maintenance-plans/:id/assets/:assetId`

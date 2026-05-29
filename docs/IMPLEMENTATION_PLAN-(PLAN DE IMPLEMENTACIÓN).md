@@ -320,6 +320,7 @@ Entregables:
 - Endpoints dedicados para asociar, reemplazar y quitar activos de un plan. Estado: implementado.
 - Frecuencia tipada diaria, semanal, mensual, anual o por fecha. Estado: implementado.
 - Tareas/checklist del plan. Estado: implementado.
+- Endpoints dedicados para agregar, reemplazar, actualizar y eliminar tareas del checklist. Estado: implementado.
 - Generacion de ordenes preventivas desde un plan. Estado: implementado.
 - Prevencion de orden duplicada activa por plan y activo. Estado: implementado.
 - Calculo de proxima fecha `nextDueAt` con `intervalDays`. Estado: implementado.

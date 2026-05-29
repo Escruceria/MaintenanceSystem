@@ -16,7 +16,9 @@ import { CreateMaintenancePlanDto } from "./dto/create-maintenance-plan.dto";
 import { GenerateMaintenanceOrdersDto } from "./dto/generate-maintenance-orders.dto";
 import { MaintenancePlanTaskDto } from "./dto/maintenance-plan-task.dto";
 import { SetMaintenancePlanAssetsDto } from "./dto/set-maintenance-plan-assets.dto";
+import { SetMaintenancePlanTasksDto } from "./dto/set-maintenance-plan-tasks.dto";
 import { UpdateMaintenancePlanDto } from "./dto/update-maintenance-plan.dto";
+import { UpdateMaintenancePlanTaskDto } from "./dto/update-maintenance-plan-task.dto";
 
 const activeWorkOrderStatuses = [
   WorkOrderStatus.OPEN,
@@ -318,6 +320,76 @@ export class MaintenancePlansService {
     return this.findOne(id);
   }
 
+  async addTask(id: string, dto: MaintenancePlanTaskDto) {
+    await this.ensurePlanExists(id);
+
+    const nextSortOrder =
+      dto.sortOrder ??
+      (await this.prisma.maintenancePlanTask.count({
+        where: { planId: id },
+      }));
+
+    await this.prisma.maintenancePlanTask.create({
+      data: {
+        planId: id,
+        title: dto.title.trim(),
+        description: this.normalizeOptionalText(dto.description),
+        sortOrder: nextSortOrder,
+        isRequired: dto.isRequired ?? true,
+      },
+    });
+
+    return this.findOne(id);
+  }
+
+  async setTasks(id: string, dto: SetMaintenancePlanTasksDto) {
+    await this.ensurePlanExists(id);
+
+    const plan = await this.prisma.$transaction(async (tx) => {
+      await this.replaceTasks(tx, id, dto.tasks);
+
+      return tx.maintenancePlan.findUnique({
+        where: { id },
+        select: maintenancePlanSelect,
+      });
+    });
+
+    return this.toPlanResponse(plan!);
+  }
+
+  async updateTask(
+    id: string,
+    taskId: string,
+    dto: UpdateMaintenancePlanTaskDto,
+  ) {
+    await this.ensureTaskBelongsToPlan(id, taskId);
+
+    await this.prisma.maintenancePlanTask.update({
+      where: { id: taskId },
+      data: {
+        title: dto.title?.trim(),
+        description:
+          dto.description === undefined
+            ? undefined
+            : this.normalizeOptionalText(dto.description),
+        sortOrder: dto.sortOrder,
+        isRequired: dto.isRequired,
+      },
+    });
+
+    return this.findOne(id);
+  }
+
+  async removeTask(id: string, taskId: string) {
+    await this.ensureTaskBelongsToPlan(id, taskId);
+
+    await this.prisma.maintenancePlanTask.delete({
+      where: { id: taskId },
+    });
+
+    return this.findOne(id);
+  }
+
   async remove(id: string) {
     const plan = await this.prisma.maintenancePlan.findUnique({
       where: { id },
@@ -537,6 +609,19 @@ export class MaintenancePlansService {
 
     if (!plan) {
       throw new NotFoundException("Plan de mantenimiento no encontrado");
+    }
+  }
+
+  private async ensureTaskBelongsToPlan(planId: string, taskId: string) {
+    const task = await this.prisma.maintenancePlanTask.findUnique({
+      where: { id: taskId },
+      select: {
+        planId: true,
+      },
+    });
+
+    if (!task || task.planId !== planId) {
+      throw new NotFoundException("Tarea del plan no encontrada");
     }
   }
 

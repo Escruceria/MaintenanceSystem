@@ -16,7 +16,10 @@ import { PermissionsGuard } from "../auth/guards/permissions.guard";
 import { CreateMaintenancePlanDto } from "./dto/create-maintenance-plan.dto";
 import { GenerateMaintenanceOrdersDto } from "./dto/generate-maintenance-orders.dto";
 import { SetMaintenancePlanAssetsDto } from "./dto/set-maintenance-plan-assets.dto";
+import { SetMaintenancePlanTasksDto } from "./dto/set-maintenance-plan-tasks.dto";
 import { UpdateMaintenancePlanDto } from "./dto/update-maintenance-plan.dto";
+import { UpdateMaintenancePlanTaskDto } from "./dto/update-maintenance-plan-task.dto";
+import { MaintenancePlanTaskDto } from "./dto/maintenance-plan-task.dto";
 import { MaintenancePlansService } from "./maintenance-plans.service";
 
 @ApiTags("maintenance-plans")
@@ -78,6 +81,34 @@ export class MaintenancePlansController {
   @Delete(":id/assets/:assetId")
   removeAsset(@Param("id") id: string, @Param("assetId") assetId: string) {
     return this.maintenancePlans.removeAsset(id, assetId);
+  }
+
+  @Permissions("maintenance-plans:write")
+  @Post(":id/tasks")
+  addTask(@Param("id") id: string, @Body() dto: MaintenancePlanTaskDto) {
+    return this.maintenancePlans.addTask(id, dto);
+  }
+
+  @Permissions("maintenance-plans:write")
+  @Put(":id/tasks")
+  setTasks(@Param("id") id: string, @Body() dto: SetMaintenancePlanTasksDto) {
+    return this.maintenancePlans.setTasks(id, dto);
+  }
+
+  @Permissions("maintenance-plans:write")
+  @Patch(":id/tasks/:taskId")
+  updateTask(
+    @Param("id") id: string,
+    @Param("taskId") taskId: string,
+    @Body() dto: UpdateMaintenancePlanTaskDto,
+  ) {
+    return this.maintenancePlans.updateTask(id, taskId, dto);
+  }
+
+  @Permissions("maintenance-plans:write")
+  @Delete(":id/tasks/:taskId")
+  removeTask(@Param("id") id: string, @Param("taskId") taskId: string) {
+    return this.maintenancePlans.removeTask(id, taskId);
   }
 
   @Permissions("maintenance-plans:write", "work-orders:write")
