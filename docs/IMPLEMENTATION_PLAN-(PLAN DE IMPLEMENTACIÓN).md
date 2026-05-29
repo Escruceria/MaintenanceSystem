@@ -24,6 +24,7 @@ Ya existe:
 - CRUD real de activos/equipos.
 - Ordenes de trabajo operativas.
 - CRUD de inventario/repuestos.
+- Dashboard conectado a datos reales desde API.
 - Modulos base del backend.
 - Documentacion inicial.
 - Repositorio GitHub.
@@ -43,7 +44,7 @@ Faltan:
 - Responsables de activos.
 - Planes asociados a activos.
 - CRUDs completos.
-- Dashboard conectado a datos reales.
+- Dashboard gerencial avanzado con graficas, filtros y exportaciones.
 
 ## Orden de implementacion aprobado
 
@@ -55,6 +56,7 @@ El desarrollo operativo continuara en este orden:
 4. CRUD de ubicaciones: sedes, areas y jerarquias. Estado: implementado.
 5. CRUD de activos/equipos: codigo, nombre, serial, marca, modelo, estado y ubicacion. Estado: implementado.
 6. Ordenes de trabajo: crear, asignar, cambiar estados y cerrar. Estado: implementado.
+7. Dashboard conectado a datos reales desde API. Estado: implementado.
 
 ## Fase 1 - Documentacion del dominio
 
@@ -345,17 +347,37 @@ Objetivo: mostrar indicadores reales desde PostgreSQL.
 
 Indicadores:
 
+- Ordenes abiertas. Estado: implementado.
+- Ordenes criticas. Estado: implementado.
+- Cumplimiento preventivo mensual. Estado: implementado.
+- Equipos activos. Estado: implementado.
+- Equipos en mantenimiento. Estado: implementado.
+- Repuestos bajo minimo. Estado: implementado.
+- Repuestos agotados. Estado: implementado.
+- Ordenes recientes. Estado: implementado.
+- Prioridades operativas derivadas de los datos. Estado: implementado.
 - Activos por categoria.
 - Activos criticos.
 - Activos fuera de servicio.
-- Ordenes abiertas.
 - Ordenes vencidas.
-- Cumplimiento preventivo.
 - MTTR.
 - MTBF.
 - Disponibilidad.
 - Costos por activo.
-- Repuestos bajo minimo.
+
+Entregables implementados:
+
+- Servicio `ReportsService` con consultas Prisma reales.
+- Endpoint `GET /api/reports/summary` protegido por `reports:read`.
+- Dashboard Next.js consumiendo la API.
+- Conexion interna Docker entre `web` y `api` mediante `API_INTERNAL_URL`.
+
+Pendiente futuro:
+
+- Usar sesion real del usuario autenticado en frontend.
+- Agregar graficas, filtros por sede, fechas, categoria y criticidad.
+- Exportacion de reportes.
+- Indicadores avanzados cuando existan planes, medidores, costos e historial suficiente.
 
 ## Fase 10 - Produccion
 

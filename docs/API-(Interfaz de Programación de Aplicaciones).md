@@ -437,6 +437,52 @@ Reglas:
 - Los ajustes no pueden dejar el stock en negativo.
 - No se puede eliminar un repuesto usado en ordenes de trabajo.
 
+## Dashboard y reportes
+
+El dashboard consume datos reales desde PostgreSQL mediante el endpoint protegido `GET /api/reports/summary`.
+
+Consultar resumen:
+
+```powershell
+curl.exe http://localhost:4000/api/reports/summary -H "Authorization: Bearer <accessToken>"
+```
+
+Respuesta esperada:
+
+```json
+{
+  "metrics": {
+    "openWorkOrders": 0,
+    "criticalWorkOrders": 0,
+    "preventiveCompliance": 100,
+    "assetsActive": 0,
+    "assetsInMaintenance": 0,
+    "lowStockItems": 0,
+    "urgentLowStockItems": 0
+  },
+  "recentWorkOrders": [],
+  "priorities": [
+    {
+      "title": "Operacion estable",
+      "detail": "No hay prioridades criticas segun los datos actuales.",
+      "severity": "normal"
+    }
+  ]
+}
+```
+
+Metricas calculadas:
+
+- Ordenes abiertas: ordenes en estado `OPEN`, `ASSIGNED`, `IN_PROGRESS` u `ON_HOLD`.
+- Ordenes criticas: ordenes abiertas con prioridad `CRITICAL`.
+- Cumplimiento preventivo: ordenes preventivas completadas contra ordenes preventivas creadas en el mes.
+- Equipos activos: activos en estado `ACTIVE`.
+- Equipos en mantenimiento: activos en estado `IN_MAINTENANCE`.
+- Repuestos bajos: repuestos con `stock <= minimumStock`.
+- Repuestos agotados: repuestos con `stock = 0`.
+
+En Docker, el frontend usa `API_INTERNAL_URL=http://api:4000/api` para consultar la API desde la red interna de contenedores. Las variables `DASHBOARD_ADMIN_EMAIL` y `DASHBOARD_ADMIN_PASSWORD` solo son una ayuda de desarrollo para obtener un JWT y consumir el endpoint protegido. En produccion el dashboard debe usar la sesion real del usuario autenticado.
+
 ## Rutas protegidas actuales
 
 - `POST /api/users`

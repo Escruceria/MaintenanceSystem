@@ -3,20 +3,18 @@ import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { Permissions } from "../auth/decorators/permissions.decorator";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { PermissionsGuard } from "../auth/guards/permissions.guard";
+import { ReportsService } from "./reports.service";
 
 @ApiTags("reports")
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, PermissionsGuard)
 @Controller("reports")
 export class ReportsController {
+  constructor(private readonly reportsService: ReportsService) {}
+
   @Permissions("reports:read")
   @Get("summary")
   summary() {
-    return {
-      openWorkOrders: 0,
-      assetsInMaintenance: 0,
-      lowStockItems: 0,
-      preventiveCompliance: 0,
-    };
+    return this.reportsService.summary();
   }
 }

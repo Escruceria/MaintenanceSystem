@@ -43,6 +43,9 @@ services:
       - api
     environment:
       NEXT_PUBLIC_API_URL: http://localhost:4000/api
+      API_INTERNAL_URL: http://api:4000/api
+      DASHBOARD_ADMIN_EMAIL: admin@maintenance.local
+      DASHBOARD_ADMIN_PASSWORD: Admin123*
     ports:
       - "3000:3000"
 
