@@ -6,6 +6,7 @@ coverage
 .env.local
 .env.*.local
 *.log
+*.tsbuildinfo
 postgres-data
 archivo_historico/
 img/
