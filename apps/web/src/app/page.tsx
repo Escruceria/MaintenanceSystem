@@ -31,7 +31,20 @@ type DashboardSummary = {
     assetsInMaintenance: number;
     lowStockItems: number;
     urgentLowStockItems: number;
+    overdueMaintenancePlans: number;
+    upcomingMaintenancePlans: number;
   };
+  upcomingMaintenance: {
+    id: string;
+    code: string;
+    name: string;
+    frequency: string;
+    frequencyType: string;
+    priority: string;
+    nextDueAt: string;
+    assetsCount: number;
+    status: string;
+  }[];
   recentWorkOrders: {
     id: string;
     number: string;
@@ -73,7 +86,10 @@ const emptyDashboard: DashboardSummary = {
     assetsInMaintenance: 0,
     lowStockItems: 0,
     urgentLowStockItems: 0,
+    overdueMaintenancePlans: 0,
+    upcomingMaintenancePlans: 0,
   },
+  upcomingMaintenance: [],
   recentWorkOrders: [],
   priorities: [
     {
@@ -99,6 +115,19 @@ const statusLabels: Record<string, string> = {
   ON_HOLD: "En espera",
   COMPLETED: "Cerrada",
   CANCELLED: "Cancelada",
+};
+
+const frequencyLabels: Record<string, string> = {
+  DAILY: "Diaria",
+  WEEKLY: "Semanal",
+  MONTHLY: "Mensual",
+  YEARLY: "Anual",
+  ON_DATE: "Fecha unica",
+};
+
+const maintenanceDueStatusLabels: Record<string, string> = {
+  OVERDUE: "Vencido",
+  UPCOMING: "Proximo",
 };
 
 const getApiBaseUrl = () =>
@@ -177,7 +206,7 @@ const buildMetrics = (summary: DashboardSummary) => [
   {
     label: "Cumplimiento preventivo",
     value: `${summary.metrics.preventiveCompliance}%`,
-    note: "Calculado con ordenes preventivas del mes",
+    note: `${summary.metrics.overdueMaintenancePlans} vencidos`,
   },
   {
     label: "Equipos activos",
@@ -189,7 +218,19 @@ const buildMetrics = (summary: DashboardSummary) => [
     value: String(summary.metrics.lowStockItems),
     note: `${summary.metrics.urgentLowStockItems} agotados`,
   },
+  {
+    label: "Proximos mantenimientos",
+    value: String(summary.metrics.upcomingMaintenancePlans),
+    note: "Vencen en los proximos 30 dias",
+  },
 ];
+
+const formatDate = (value: string) =>
+  new Intl.DateTimeFormat("es-CO", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(new Date(value));
 
 export default async function Home() {
   const dashboard = await getDashboardData();
@@ -255,7 +296,7 @@ export default async function Home() {
             </div>
           </header>
 
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
             {metrics.map((metric) => (
               <article
                 key={metric.label}
@@ -267,6 +308,69 @@ export default async function Home() {
               </article>
             ))}
           </div>
+
+          <section className="mt-6 rounded border border-line bg-white">
+            <div className="border-b border-line px-4 py-3">
+              <h2 className="text-base font-semibold">
+                Vencimientos y proximos mantenimientos
+              </h2>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[760px] border-collapse text-sm">
+                <thead className="bg-field text-left text-slate-500">
+                  <tr>
+                    <th className="px-4 py-3 font-medium">Codigo</th>
+                    <th className="px-4 py-3 font-medium">Plan</th>
+                    <th className="px-4 py-3 font-medium">Frecuencia</th>
+                    <th className="px-4 py-3 font-medium">Activos</th>
+                    <th className="px-4 py-3 font-medium">Vence</th>
+                    <th className="px-4 py-3 font-medium">Estado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {dashboard.data.upcomingMaintenance.map((plan) => (
+                    <tr key={plan.id} className="border-t border-line">
+                      <td className="px-4 py-3">{plan.code}</td>
+                      <td className="px-4 py-3">
+                        <span className="block font-medium">{plan.name}</span>
+                        <span className="text-xs text-slate-500">
+                          Prioridad{" "}
+                          {priorityLabels[plan.priority] ?? plan.priority}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        {frequencyLabels[plan.frequencyType] ?? plan.frequency}
+                      </td>
+                      <td className="px-4 py-3">{plan.assetsCount}</td>
+                      <td className="px-4 py-3">
+                        {formatDate(plan.nextDueAt)}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span
+                          className={`rounded px-2 py-1 text-xs font-medium ${
+                            plan.status === "OVERDUE"
+                              ? "bg-red-50 text-red-700"
+                              : "bg-amber-50 text-amber-700"
+                          }`}
+                        >
+                          {maintenanceDueStatusLabels[plan.status] ??
+                            plan.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                  {dashboard.data.upcomingMaintenance.length === 0 ? (
+                    <tr className="border-t border-line">
+                      <td className="px-4 py-6 text-slate-500" colSpan={6}>
+                        No hay planes vencidos ni proximos a vencer en los
+                        siguientes 30 dias.
+                      </td>
+                    </tr>
+                  ) : null}
+                </tbody>
+              </table>
+            </div>
+          </section>
 
           <div className="mt-6 grid gap-6 xl:grid-cols-[1fr_360px]">
             <section className="rounded border border-line bg-white">

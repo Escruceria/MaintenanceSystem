@@ -615,8 +615,23 @@ Respuesta esperada:
     "assetsActive": 0,
     "assetsInMaintenance": 0,
     "lowStockItems": 0,
-    "urgentLowStockItems": 0
+    "urgentLowStockItems": 0,
+    "overdueMaintenancePlans": 0,
+    "upcomingMaintenancePlans": 0
   },
+  "upcomingMaintenance": [
+    {
+      "id": "...",
+      "code": "MP-BOMBA-MENSUAL",
+      "name": "Mantenimiento mensual de bombas",
+      "frequency": "Mensual",
+      "frequencyType": "MONTHLY",
+      "priority": "MEDIUM",
+      "nextDueAt": "2026-06-15T08:00:00.000Z",
+      "assetsCount": 2,
+      "status": "UPCOMING"
+    }
+  ],
   "recentWorkOrders": [],
   "priorities": [
     {
@@ -637,6 +652,9 @@ Metricas calculadas:
 - Equipos en mantenimiento: activos en estado `IN_MAINTENANCE`.
 - Repuestos bajos: repuestos con `stock <= minimumStock`.
 - Repuestos agotados: repuestos con `stock = 0`.
+- Planes vencidos: planes activos con `nextDueAt` anterior a la fecha actual.
+- Proximos mantenimientos: planes activos con `nextDueAt` dentro de los proximos 30 dias.
+- Vencimientos del dashboard: listado de hasta 8 planes activos vencidos o proximos, ordenados por `nextDueAt`.
 
 En Docker, el frontend usa `API_INTERNAL_URL=http://api:4000/api` para consultar la API desde la red interna de contenedores. Las variables `DASHBOARD_ADMIN_EMAIL` y `DASHBOARD_ADMIN_PASSWORD` solo son una ayuda de desarrollo para obtener un JWT y consumir el endpoint protegido. En produccion el dashboard debe usar la sesion real del usuario autenticado.
 

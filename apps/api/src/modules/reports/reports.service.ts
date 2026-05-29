@@ -23,6 +23,10 @@ export class ReportsService {
     monthStart.setDate(1);
     monthStart.setHours(0, 0, 0, 0);
 
+    const now = new Date();
+    const upcomingLimit = new Date(now);
+    upcomingLimit.setDate(upcomingLimit.getDate() + 30);
+
     const [
       openWorkOrders,
       criticalWorkOrders,
@@ -32,6 +36,9 @@ export class ReportsService {
       assetsInMaintenance,
       lowStockItems,
       urgentLowStockItems,
+      overdueMaintenancePlans,
+      upcomingMaintenancePlans,
+      upcomingMaintenance,
       recentWorkOrders,
     ] = await this.prisma.$transaction([
       this.prisma.workOrder.count({
@@ -70,6 +77,43 @@ export class ReportsService {
       this.prisma.sparePart.count({
         where: {
           stock: 0,
+        },
+      }),
+      this.prisma.maintenancePlan.count({
+        where: {
+          isActive: true,
+          nextDueAt: { lt: now },
+        },
+      }),
+      this.prisma.maintenancePlan.count({
+        where: {
+          isActive: true,
+          nextDueAt: {
+            gte: now,
+            lte: upcomingLimit,
+          },
+        },
+      }),
+      this.prisma.maintenancePlan.findMany({
+        take: 8,
+        where: {
+          isActive: true,
+          nextDueAt: { lte: upcomingLimit },
+        },
+        orderBy: [{ nextDueAt: "asc" }],
+        select: {
+          id: true,
+          code: true,
+          name: true,
+          frequency: true,
+          frequencyType: true,
+          priority: true,
+          nextDueAt: true,
+          _count: {
+            select: {
+              assets: true,
+            },
+          },
         },
       }),
       this.prisma.workOrder.findMany({
@@ -117,7 +161,20 @@ export class ReportsService {
         assetsInMaintenance,
         lowStockItems,
         urgentLowStockItems,
+        overdueMaintenancePlans,
+        upcomingMaintenancePlans,
       },
+      upcomingMaintenance: upcomingMaintenance.map((plan) => ({
+        id: plan.id,
+        code: plan.code,
+        name: plan.name,
+        frequency: plan.frequency,
+        frequencyType: plan.frequencyType,
+        priority: plan.priority,
+        nextDueAt: plan.nextDueAt,
+        assetsCount: plan._count.assets,
+        status: plan.nextDueAt && plan.nextDueAt < now ? "OVERDUE" : "UPCOMING",
+      })),
       recentWorkOrders: recentWorkOrders.map((workOrder) => ({
         id: workOrder.id,
         number: workOrder.number,
@@ -134,6 +191,8 @@ export class ReportsService {
         lowStockItems,
         urgentLowStockItems,
         preventiveCompliance,
+        overdueMaintenancePlans,
+        upcomingMaintenancePlans,
       }),
     };
   }
@@ -143,6 +202,8 @@ export class ReportsService {
     lowStockItems: number;
     urgentLowStockItems: number;
     preventiveCompliance: number;
+    overdueMaintenancePlans: number;
+    upcomingMaintenancePlans: number;
   }) {
     const priorities = [];
 
@@ -169,6 +230,20 @@ export class ReportsService {
       priorities.push({
         title: "Programar preventivos",
         detail: `Cumplimiento preventivo actual: ${metrics.preventiveCompliance}%.`,
+        severity: "warning",
+      });
+    }
+
+    if (metrics.overdueMaintenancePlans > 0) {
+      priorities.push({
+        title: "Atender mantenimientos vencidos",
+        detail: `${metrics.overdueMaintenancePlans} planes ya superaron su fecha programada.`,
+        severity: "critical",
+      });
+    } else if (metrics.upcomingMaintenancePlans > 0) {
+      priorities.push({
+        title: "Preparar mantenimientos proximos",
+        detail: `${metrics.upcomingMaintenancePlans} planes vencen en los proximos 30 dias.`,
         severity: "warning",
       });
     }

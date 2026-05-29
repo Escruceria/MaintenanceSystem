@@ -324,7 +324,7 @@ Entregables:
 - Generacion de ordenes preventivas desde un plan. Estado: implementado.
 - Prevencion de orden duplicada activa por plan y activo. Estado: implementado.
 - Calculo de proxima fecha `nextDueAt` con `intervalDays`. Estado: implementado.
-- Calendario de proximos mantenimientos.
+- Calendario de proximos mantenimientos. Estado: implementado en dashboard.
 
 Reglas implementadas:
 
@@ -373,6 +373,9 @@ Indicadores:
 - Repuestos agotados. Estado: implementado.
 - Ordenes recientes. Estado: implementado.
 - Prioridades operativas derivadas de los datos. Estado: implementado.
+- Planes de mantenimiento vencidos. Estado: implementado.
+- Proximos mantenimientos a 30 dias. Estado: implementado.
+- Tabla de vencimientos y proximos mantenimientos. Estado: implementado.
 - Activos por categoria.
 - Activos criticos.
 - Activos fuera de servicio.
