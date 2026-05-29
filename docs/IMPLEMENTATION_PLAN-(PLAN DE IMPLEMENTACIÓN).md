@@ -21,6 +21,7 @@ Ya existe:
 - Guard base por permisos.
 - CRUD administrativo de usuarios.
 - CRUD jerarquico de ubicaciones.
+- CRUD real de activos/equipos.
 - Modulos base del backend.
 - Documentacion inicial.
 - Repositorio GitHub.
@@ -50,7 +51,7 @@ El desarrollo operativo continuara en este orden:
 2. Roles y permisos reales: guards por permiso, no solo JWT.
 3. CRUD de usuarios: crear, listar, activar/desactivar y asignar roles. Estado: implementado.
 4. CRUD de ubicaciones: sedes, areas y jerarquias. Estado: implementado.
-5. CRUD de activos/equipos: codigo, nombre, serial, marca, modelo, estado y ubicacion.
+5. CRUD de activos/equipos: codigo, nombre, serial, marca, modelo, estado y ubicacion. Estado: implementado.
 6. Ordenes de trabajo: crear, asignar, cambiar estados y cerrar.
 
 ## Fase 1 - Documentacion del dominio
@@ -106,11 +107,33 @@ Endpoints esperados:
 - `POST /api/asset-categories`
 - `GET /api/asset-types`
 - `POST /api/asset-types`
-- `GET /api/assets`
-- `POST /api/assets`
-- `GET /api/assets/:id`
-- `PATCH /api/assets/:id`
+- `GET /api/assets`. Estado: implementado.
+- `POST /api/assets`. Estado: implementado.
+- `GET /api/assets/:id`. Estado: implementado.
+- `PATCH /api/assets/:id`. Estado: implementado.
 - `GET /api/assets/:id/history`
+
+## Fase 3.1 - CRUD de activos/equipos
+
+Objetivo: administrar activos reales conectados a PostgreSQL, asociados a ubicaciones y preparados para ordenes de trabajo.
+
+Entregables:
+
+- Crear activo/equipo. Estado: implementado.
+- Listar activos/equipos. Estado: implementado.
+- Consultar activo por id. Estado: implementado.
+- Actualizar codigo, nombre, descripcion, serial, marca, modelo, QR, estado y ubicacion. Estado: implementado.
+- Activar activo. Estado: implementado.
+- Retirar activo. Estado: implementado.
+- Eliminar activo sin ordenes ni solicitudes asociadas. Estado: implementado.
+
+Reglas implementadas:
+
+- Codigo unico normalizado en mayusculas.
+- QR unico y generado automaticamente si no se envia.
+- Validacion de ubicacion existente.
+- Bloqueo de eliminacion cuando existan ordenes o solicitudes asociadas.
+- Respuesta con conteo de ordenes, solicitudes y ubicacion resumida.
 
 ## Fase 4 - Roles y permisos reales
 

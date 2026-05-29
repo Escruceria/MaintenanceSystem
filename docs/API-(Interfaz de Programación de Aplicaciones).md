@@ -223,6 +223,71 @@ Reglas:
 - No se puede eliminar una ubicacion con sububicaciones o activos asociados.
 - La desactivacion mantiene historia y relaciones.
 
+## CRUD de activos/equipos
+
+Los activos/equipos representan cualquier elemento fisico, tecnologico, operativo o de infraestructura que requiere seguimiento y mantenimiento.
+
+Estados disponibles:
+
+- `ACTIVE`
+- `IN_MAINTENANCE`
+- `OUT_OF_SERVICE`
+- `RETIRED`
+
+Crear activo:
+
+```powershell
+curl.exe -X POST http://localhost:4000/api/assets `
+  -H "Content-Type: application/json" `
+  -H "Authorization: Bearer <accessToken>" `
+  -d "{\"code\":\"EQ-0001\",\"name\":\"Bomba centrifuga linea 2\",\"serialNumber\":\"SN-001\",\"brand\":\"Siemens\",\"model\":\"XPTO-500\",\"locationId\":\"<locationId>\"}"
+```
+
+Si no se envia `qrCode`, la API genera uno con el formato `MS-ASSET:<CODE>`.
+
+Listar activos:
+
+```powershell
+curl.exe http://localhost:4000/api/assets -H "Authorization: Bearer <accessToken>"
+```
+
+Consultar activo:
+
+```powershell
+curl.exe http://localhost:4000/api/assets/<assetId> -H "Authorization: Bearer <accessToken>"
+```
+
+Actualizar activo:
+
+```powershell
+curl.exe -X PATCH http://localhost:4000/api/assets/<assetId> `
+  -H "Content-Type: application/json" `
+  -H "Authorization: Bearer <accessToken>" `
+  -d "{\"name\":\"Bomba centrifuga actualizada\",\"status\":\"IN_MAINTENANCE\"}"
+```
+
+Activar o retirar activo:
+
+```powershell
+curl.exe -X PATCH http://localhost:4000/api/assets/<assetId>/activate -H "Authorization: Bearer <accessToken>"
+curl.exe -X PATCH http://localhost:4000/api/assets/<assetId>/retire -H "Authorization: Bearer <accessToken>"
+```
+
+Eliminar activo:
+
+```powershell
+curl.exe -X DELETE http://localhost:4000/api/assets/<assetId> -H "Authorization: Bearer <accessToken>"
+```
+
+Reglas:
+
+- El codigo es unico y se normaliza en mayusculas.
+- El QR es unico. Si no se envia, se genera automaticamente desde el codigo.
+- La ubicacion debe existir cuando se asigna `locationId`.
+- Las respuestas incluyen la ubicacion resumida.
+- No se puede eliminar un activo con ordenes o solicitudes asociadas.
+- Para conservar historia operativa, un activo con trazabilidad debe retirarse usando estado `RETIRED`.
+
 ## Rutas protegidas actuales
 
 - `POST /api/users`
@@ -244,7 +309,13 @@ Reglas:
 - `PATCH /api/locations/:id/activate`
 - `PATCH /api/locations/:id/deactivate`
 - `DELETE /api/locations/:id`
+- `POST /api/assets`
 - `GET /api/assets`
+- `GET /api/assets/:id`
+- `PATCH /api/assets/:id`
+- `PATCH /api/assets/:id/activate`
+- `PATCH /api/assets/:id/retire`
+- `DELETE /api/assets/:id`
 - `GET /api/work-orders`
 - `GET /api/maintenance-plans`
 - `GET /api/requests`
@@ -256,7 +327,7 @@ Reglas:
 Sin token deben responder `401`.
 Con token valido pero sin permiso deben responder `403`.
 
-La matriz de permisos esta documentada en `docs/PERMISSIONS.md`.
+La matriz de permisos esta documentada en `docs/PERMISSIONS-(PERMISOS).md`.
 
 ## Convenciones futuras
 

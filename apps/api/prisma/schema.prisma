@@ -178,6 +178,7 @@ model Asset {
   serialNumber String?
   brand        String?
   model        String?
+  qrCode       String?          @unique
   status       AssetStatus      @default(ACTIVE)
   locationId   String?
   location     Location?        @relation(fields: [locationId], references: [id])
@@ -185,6 +186,10 @@ model Asset {
   requests     ServiceRequest[]
   createdAt    DateTime         @default(now())
   updatedAt    DateTime         @updatedAt
+
+  @@index([status])
+  @@index([locationId])
+  @@index([brand])
 }
 
 model WorkOrder {
