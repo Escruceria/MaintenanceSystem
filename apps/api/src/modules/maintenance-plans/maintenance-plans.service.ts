@@ -14,6 +14,7 @@ import { PrismaService } from "../prisma/prisma.service";
 import { CreateMaintenancePlanDto } from "./dto/create-maintenance-plan.dto";
 import { GenerateMaintenanceOrdersDto } from "./dto/generate-maintenance-orders.dto";
 import { MaintenancePlanTaskDto } from "./dto/maintenance-plan-task.dto";
+import { SetMaintenancePlanAssetsDto } from "./dto/set-maintenance-plan-assets.dto";
 import { UpdateMaintenancePlanDto } from "./dto/update-maintenance-plan.dto";
 
 const activeWorkOrderStatuses = [
@@ -214,6 +215,74 @@ export class MaintenancePlansService {
     });
 
     return this.toPlanResponse(plan);
+  }
+
+  async addAsset(id: string, assetId: string) {
+    await this.ensurePlanExists(id);
+    await this.ensureAssetsExist([assetId]);
+
+    await this.prisma.maintenancePlanAsset.upsert({
+      where: {
+        planId_assetId: {
+          planId: id,
+          assetId,
+        },
+      },
+      update: {},
+      create: {
+        planId: id,
+        assetId,
+      },
+    });
+
+    return this.findOne(id);
+  }
+
+  async setAssets(id: string, dto: SetMaintenancePlanAssetsDto) {
+    await this.ensurePlanExists(id);
+    await this.ensureAssetsExist(dto.assetIds);
+
+    const plan = await this.prisma.$transaction(async (tx) => {
+      await this.replaceAssets(tx, id, dto.assetIds);
+
+      return tx.maintenancePlan.findUnique({
+        where: { id },
+        select: maintenancePlanSelect,
+      });
+    });
+
+    return this.toPlanResponse(plan!);
+  }
+
+  async removeAsset(id: string, assetId: string) {
+    await this.ensurePlanExists(id);
+
+    const relation = await this.prisma.maintenancePlanAsset.findUnique({
+      where: {
+        planId_assetId: {
+          planId: id,
+          assetId,
+        },
+      },
+      select: {
+        planId: true,
+      },
+    });
+
+    if (!relation) {
+      throw new NotFoundException("El activo no esta asociado a este plan");
+    }
+
+    await this.prisma.maintenancePlanAsset.delete({
+      where: {
+        planId_assetId: {
+          planId: id,
+          assetId,
+        },
+      },
+    });
+
+    return this.findOne(id);
   }
 
   async remove(id: string) {

@@ -154,6 +154,9 @@ Permisos principales:
 | `PATCH /api/maintenance-plans/:id`                     | `maintenance-plans:write`                       |
 | `PATCH /api/maintenance-plans/:id/activate`            | `maintenance-plans:write`                       |
 | `PATCH /api/maintenance-plans/:id/deactivate`          | `maintenance-plans:write`                       |
+| `POST /api/maintenance-plans/:id/assets/:assetId`      | `maintenance-plans:write`                       |
+| `PUT /api/maintenance-plans/:id/assets`                | `maintenance-plans:write`                       |
+| `DELETE /api/maintenance-plans/:id/assets/:assetId`    | `maintenance-plans:write`                       |
 | `POST /api/maintenance-plans/:id/generate-work-orders` | `maintenance-plans:write` y `work-orders:write` |
 | `DELETE /api/maintenance-plans/:id`                    | `maintenance-plans:write`                       |
 | `GET /api/requests`                                    | `requests:read`                                 |

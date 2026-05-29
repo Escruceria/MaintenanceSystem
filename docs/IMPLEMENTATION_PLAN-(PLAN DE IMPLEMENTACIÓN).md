@@ -317,6 +317,7 @@ Entregables:
 
 - CRUD de planes de mantenimiento. Estado: implementado.
 - Plan asociado a uno o varios activos. Estado: implementado.
+- Endpoints dedicados para asociar, reemplazar y quitar activos de un plan. Estado: implementado.
 - Tareas/checklist del plan. Estado: implementado.
 - Generacion de ordenes preventivas desde un plan. Estado: implementado.
 - Prevencion de orden duplicada activa por plan y activo. Estado: implementado.

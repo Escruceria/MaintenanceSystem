@@ -471,6 +471,29 @@ curl.exe -X PATCH http://localhost:4000/api/maintenance-plans/<planId> `
   -d "{\"frequency\":\"Trimestral\",\"intervalDays\":90,\"assetIds\":[\"<assetId>\"],\"tasks\":[{\"title\":\"Inspeccion trimestral\",\"sortOrder\":1}]}"
 ```
 
+Asociar un activo al plan:
+
+```powershell
+curl.exe -X POST http://localhost:4000/api/maintenance-plans/<planId>/assets/<assetId> `
+  -H "Authorization: Bearer <accessToken>"
+```
+
+Reemplazar todos los activos asociados al plan:
+
+```powershell
+curl.exe -X PUT http://localhost:4000/api/maintenance-plans/<planId>/assets `
+  -H "Content-Type: application/json" `
+  -H "Authorization: Bearer <accessToken>" `
+  -d "{\"assetIds\":[\"<assetId1>\",\"<assetId2>\"]}"
+```
+
+Quitar un activo del plan:
+
+```powershell
+curl.exe -X DELETE http://localhost:4000/api/maintenance-plans/<planId>/assets/<assetId> `
+  -H "Authorization: Bearer <accessToken>"
+```
+
 Activar o desactivar plan:
 
 ```powershell
@@ -507,6 +530,7 @@ Reglas:
 - El codigo del plan es unico y se normaliza en mayusculas.
 - Un plan puede tener varias tareas/checklist.
 - Un plan puede estar asociado a varios activos.
+- La asociacion plan-activo puede administrarse desde el CRUD del plan o desde rutas dedicadas.
 - Solo se generan ordenes para activos en estado `ACTIVE`.
 - No se genera una nueva orden si ya existe una orden activa para el mismo plan y activo.
 - Al generar ordenes se actualiza `lastGeneratedAt` y se calcula `nextDueAt` sumando `intervalDays`.
@@ -602,6 +626,9 @@ En Docker, el frontend usa `API_INTERNAL_URL=http://api:4000/api` para consultar
 - `PATCH /api/maintenance-plans/:id`
 - `PATCH /api/maintenance-plans/:id/activate`
 - `PATCH /api/maintenance-plans/:id/deactivate`
+- `POST /api/maintenance-plans/:id/assets/:assetId`
+- `PUT /api/maintenance-plans/:id/assets`
+- `DELETE /api/maintenance-plans/:id/assets/:assetId`
 - `POST /api/maintenance-plans/:id/generate-work-orders`
 - `DELETE /api/maintenance-plans/:id`
 - `GET /api/requests`

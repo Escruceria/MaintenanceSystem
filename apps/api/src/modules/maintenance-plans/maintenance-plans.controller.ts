@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  Put,
   UseGuards,
 } from "@nestjs/common";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
@@ -14,6 +15,7 @@ import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { PermissionsGuard } from "../auth/guards/permissions.guard";
 import { CreateMaintenancePlanDto } from "./dto/create-maintenance-plan.dto";
 import { GenerateMaintenanceOrdersDto } from "./dto/generate-maintenance-orders.dto";
+import { SetMaintenancePlanAssetsDto } from "./dto/set-maintenance-plan-assets.dto";
 import { UpdateMaintenancePlanDto } from "./dto/update-maintenance-plan.dto";
 import { MaintenancePlansService } from "./maintenance-plans.service";
 
@@ -58,6 +60,24 @@ export class MaintenancePlansController {
   @Patch(":id/deactivate")
   deactivate(@Param("id") id: string) {
     return this.maintenancePlans.deactivate(id);
+  }
+
+  @Permissions("maintenance-plans:write")
+  @Post(":id/assets/:assetId")
+  addAsset(@Param("id") id: string, @Param("assetId") assetId: string) {
+    return this.maintenancePlans.addAsset(id, assetId);
+  }
+
+  @Permissions("maintenance-plans:write")
+  @Put(":id/assets")
+  setAssets(@Param("id") id: string, @Body() dto: SetMaintenancePlanAssetsDto) {
+    return this.maintenancePlans.setAssets(id, dto);
+  }
+
+  @Permissions("maintenance-plans:write")
+  @Delete(":id/assets/:assetId")
+  removeAsset(@Param("id") id: string, @Param("assetId") assetId: string) {
+    return this.maintenancePlans.removeAsset(id, assetId);
   }
 
   @Permissions("maintenance-plans:write", "work-orders:write")
