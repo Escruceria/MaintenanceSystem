@@ -111,28 +111,35 @@ Permisos principales:
 
 ## Endpoints protegidos actualmente
 
-| Endpoint                           | Permiso requerido        |
-| ---------------------------------- | ------------------------ |
-| `POST /api/users`                  | `users:write`            |
-| `GET /api/users`                   | `users:read`             |
-| `GET /api/users/roles`             | `roles:read`             |
-| `GET /api/users/:id`               | `users:read`             |
-| `PATCH /api/users/:id`             | `users:write`            |
-| `PATCH /api/users/:id/activate`    | `users:write`            |
-| `PATCH /api/users/:id/deactivate`  | `users:write`            |
-| `PUT /api/users/:id/roles`         | `users:write`            |
-| `GET /api/invitations`             | `users:read`             |
-| `POST /api/invitations`            | `users:write`            |
-| `POST /api/invitations/:id/cancel` | `users:write`            |
-| `GET /api/locations`               | `locations:read`         |
-| `GET /api/assets`                  | `assets:read`            |
-| `GET /api/work-orders`             | `work-orders:read`       |
-| `GET /api/maintenance-plans`       | `maintenance-plans:read` |
-| `GET /api/requests`                | `requests:read`          |
-| `GET /api/inventory/spare-parts`   | `inventory:read`         |
-| `GET /api/suppliers`               | `suppliers:read`         |
-| `GET /api/reports/summary`         | `reports:read`           |
-| `GET /api/audit`                   | `audit:read`             |
+| Endpoint                              | Permiso requerido        |
+| ------------------------------------- | ------------------------ |
+| `POST /api/users`                     | `users:write`            |
+| `GET /api/users`                      | `users:read`             |
+| `GET /api/users/roles`                | `roles:read`             |
+| `GET /api/users/:id`                  | `users:read`             |
+| `PATCH /api/users/:id`                | `users:write`            |
+| `PATCH /api/users/:id/activate`       | `users:write`            |
+| `PATCH /api/users/:id/deactivate`     | `users:write`            |
+| `PUT /api/users/:id/roles`            | `users:write`            |
+| `GET /api/invitations`                | `users:read`             |
+| `POST /api/invitations`               | `users:write`            |
+| `POST /api/invitations/:id/cancel`    | `users:write`            |
+| `POST /api/locations`                 | `locations:write`        |
+| `GET /api/locations`                  | `locations:read`         |
+| `GET /api/locations/tree`             | `locations:read`         |
+| `GET /api/locations/:id`              | `locations:read`         |
+| `PATCH /api/locations/:id`            | `locations:write`        |
+| `PATCH /api/locations/:id/activate`   | `locations:write`        |
+| `PATCH /api/locations/:id/deactivate` | `locations:write`        |
+| `DELETE /api/locations/:id`           | `locations:write`        |
+| `GET /api/assets`                     | `assets:read`            |
+| `GET /api/work-orders`                | `work-orders:read`       |
+| `GET /api/maintenance-plans`          | `maintenance-plans:read` |
+| `GET /api/requests`                   | `requests:read`          |
+| `GET /api/inventory/spare-parts`      | `inventory:read`         |
+| `GET /api/suppliers`                  | `suppliers:read`         |
+| `GET /api/reports/summary`            | `reports:read`           |
+| `GET /api/audit`                      | `audit:read`             |
 
 ## Reglas de implementacion
 

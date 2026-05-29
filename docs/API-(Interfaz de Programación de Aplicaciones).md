@@ -141,6 +141,88 @@ Reglas:
 - Un usuario administrador no puede quitarse a si mismo el rol `ADMIN`.
 - Al desactivar un usuario se revocan sus refresh tokens activos.
 
+## CRUD de ubicaciones
+
+Las ubicaciones representan sedes, edificios, pisos, areas, almacenes, cuartos o puntos tecnicos donde viven los activos.
+
+Tipos disponibles:
+
+- `SITE`
+- `BUILDING`
+- `FLOOR`
+- `AREA`
+- `ROOM`
+- `WAREHOUSE`
+- `POINT`
+- `OTHER`
+
+Crear ubicacion:
+
+```powershell
+curl.exe -X POST http://localhost:4000/api/locations `
+  -H "Content-Type: application/json" `
+  -H "Authorization: Bearer <accessToken>" `
+  -d "{\"code\":\"HQ-01\",\"name\":\"Sede principal\",\"type\":\"SITE\"}"
+```
+
+Crear sububicacion:
+
+```powershell
+curl.exe -X POST http://localhost:4000/api/locations `
+  -H "Content-Type: application/json" `
+  -H "Authorization: Bearer <accessToken>" `
+  -d "{\"code\":\"HQ-01-AREA-01\",\"name\":\"Area administrativa\",\"type\":\"AREA\",\"parentId\":\"<locationId>\"}"
+```
+
+Listar ubicaciones:
+
+```powershell
+curl.exe http://localhost:4000/api/locations -H "Authorization: Bearer <accessToken>"
+```
+
+Ver arbol jerarquico:
+
+```powershell
+curl.exe http://localhost:4000/api/locations/tree -H "Authorization: Bearer <accessToken>"
+```
+
+Consultar ubicacion:
+
+```powershell
+curl.exe http://localhost:4000/api/locations/<locationId> -H "Authorization: Bearer <accessToken>"
+```
+
+Actualizar ubicacion:
+
+```powershell
+curl.exe -X PATCH http://localhost:4000/api/locations/<locationId> `
+  -H "Content-Type: application/json" `
+  -H "Authorization: Bearer <accessToken>" `
+  -d "{\"name\":\"Area administrativa actualizada\",\"parentId\":\"<parentId>\"}"
+```
+
+Activar o desactivar ubicacion:
+
+```powershell
+curl.exe -X PATCH http://localhost:4000/api/locations/<locationId>/activate -H "Authorization: Bearer <accessToken>"
+curl.exe -X PATCH http://localhost:4000/api/locations/<locationId>/deactivate -H "Authorization: Bearer <accessToken>"
+```
+
+Eliminar ubicacion:
+
+```powershell
+curl.exe -X DELETE http://localhost:4000/api/locations/<locationId> -H "Authorization: Bearer <accessToken>"
+```
+
+Reglas:
+
+- El codigo es unico y se normaliza en mayusculas.
+- Una ubicacion puede tener padre para construir jerarquias.
+- Una ubicacion no puede ser padre de si misma.
+- Una ubicacion no puede moverse dentro de una sububicacion propia.
+- No se puede eliminar una ubicacion con sububicaciones o activos asociados.
+- La desactivacion mantiene historia y relaciones.
+
 ## Rutas protegidas actuales
 
 - `POST /api/users`
@@ -154,8 +236,15 @@ Reglas:
 - `GET /api/invitations`
 - `POST /api/invitations`
 - `POST /api/invitations/:id/cancel`
-- `GET /api/assets`
+- `POST /api/locations`
 - `GET /api/locations`
+- `GET /api/locations/tree`
+- `GET /api/locations/:id`
+- `PATCH /api/locations/:id`
+- `PATCH /api/locations/:id/activate`
+- `PATCH /api/locations/:id/deactivate`
+- `DELETE /api/locations/:id`
+- `GET /api/assets`
 - `GET /api/work-orders`
 - `GET /api/maintenance-plans`
 - `GET /api/requests`

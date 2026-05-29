@@ -20,6 +20,7 @@ Ya existe:
 - Registro seguro por invitacion.
 - Guard base por permisos.
 - CRUD administrativo de usuarios.
+- CRUD jerarquico de ubicaciones.
 - Modulos base del backend.
 - Documentacion inicial.
 - Repositorio GitHub.
@@ -48,7 +49,7 @@ El desarrollo operativo continuara en este orden:
 1. Invitaciones de usuario: registro seguro por token, sin registro publico.
 2. Roles y permisos reales: guards por permiso, no solo JWT.
 3. CRUD de usuarios: crear, listar, activar/desactivar y asignar roles. Estado: implementado.
-4. CRUD de ubicaciones: sedes, areas y jerarquias.
+4. CRUD de ubicaciones: sedes, areas y jerarquias. Estado: implementado.
 5. CRUD de activos/equipos: codigo, nombre, serial, marca, modelo, estado y ubicacion.
 6. Ordenes de trabajo: crear, asignar, cambiar estados y cerrar.
 
@@ -184,6 +185,29 @@ Reglas implementadas:
 - No devolver `passwordHash`.
 - No permitir que un usuario se desactive a si mismo.
 - No permitir que un administrador se quite a si mismo el rol `ADMIN`.
+
+## Fase 4.2 - CRUD de ubicaciones
+
+Objetivo: administrar sedes, edificios, pisos, areas, almacenes y puntos tecnicos de forma jerarquica.
+
+Entregables:
+
+- Crear ubicacion. Estado: implementado.
+- Listar ubicaciones. Estado: implementado.
+- Consultar ubicacion por id. Estado: implementado.
+- Ver arbol jerarquico. Estado: implementado.
+- Actualizar nombre, codigo, descripcion, tipo, estado y padre. Estado: implementado.
+- Activar ubicacion. Estado: implementado.
+- Desactivar ubicacion. Estado: implementado.
+- Eliminar ubicacion sin hijos ni activos. Estado: implementado.
+
+Reglas implementadas:
+
+- Codigo unico normalizado en mayusculas.
+- Padre obligatorio solo cuando se requiere jerarquia.
+- Validacion de padre existente.
+- Prevencion de ciclos jerarquicos.
+- Bloqueo de eliminacion cuando existan sububicaciones o activos asociados.
 
 ## Fase 5 - Invitaciones de usuario
 

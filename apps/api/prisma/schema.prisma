@@ -51,6 +51,17 @@ enum UserInvitationStatus {
   EXPIRED
 }
 
+enum LocationType {
+  SITE
+  BUILDING
+  FLOOR
+  AREA
+  ROOM
+  WAREHOUSE
+  POINT
+  OTHER
+}
+
 model User {
   id                  String           @id @default(uuid())
   email               String           @unique
@@ -141,15 +152,22 @@ model RolePermission {
 }
 
 model Location {
-  id        String     @id @default(uuid())
-  name      String
-  code      String     @unique
-  parentId  String?
-  parent    Location?  @relation("LocationTree", fields: [parentId], references: [id])
-  children  Location[] @relation("LocationTree")
-  assets    Asset[]
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  id          String       @id @default(uuid())
+  code        String       @unique
+  name        String
+  description String?
+  type        LocationType @default(AREA)
+  isActive    Boolean      @default(true)
+  parentId    String?
+  parent      Location?    @relation("LocationTree", fields: [parentId], references: [id])
+  children    Location[]   @relation("LocationTree")
+  assets      Asset[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@index([parentId])
+  @@index([type])
+  @@index([isActive])
 }
 
 model Asset {
