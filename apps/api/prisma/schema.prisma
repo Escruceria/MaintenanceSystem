@@ -171,21 +171,22 @@ model Location {
 }
 
 model Asset {
-  id           String           @id @default(uuid())
-  code         String           @unique
-  name         String
-  description  String?
-  serialNumber String?
-  brand        String?
-  model        String?
-  qrCode       String?          @unique
-  status       AssetStatus      @default(ACTIVE)
-  locationId   String?
-  location     Location?        @relation(fields: [locationId], references: [id])
-  workOrders   WorkOrder[]
-  requests     ServiceRequest[]
-  createdAt    DateTime         @default(now())
-  updatedAt    DateTime         @updatedAt
+  id               String                 @id @default(uuid())
+  code             String                 @unique
+  name             String
+  description      String?
+  serialNumber     String?
+  brand            String?
+  model            String?
+  qrCode           String?                @unique
+  status           AssetStatus            @default(ACTIVE)
+  locationId       String?
+  location         Location?              @relation(fields: [locationId], references: [id])
+  workOrders       WorkOrder[]
+  maintenancePlans MaintenancePlanAsset[]
+  requests         ServiceRequest[]
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
 
   @@index([status])
   @@index([locationId])
@@ -204,6 +205,8 @@ model WorkOrder {
   asset                Asset             @relation(fields: [assetId], references: [id])
   assignedTechnicianId String?
   assignedTechnician   User?             @relation("AssignedTechnician", fields: [assignedTechnicianId], references: [id])
+  maintenancePlanId    String?
+  maintenancePlan      MaintenancePlan?  @relation(fields: [maintenancePlanId], references: [id])
   scheduledAt          DateTime?
   startedAt            DateTime?
   completedAt          DateTime?
@@ -213,14 +216,52 @@ model WorkOrder {
 }
 
 model MaintenancePlan {
+  id                       String                 @id @default(uuid())
+  code                     String                 @unique
+  name                     String
+  description              String?
+  type                     MaintenanceType        @default(PREVENTIVE)
+  frequency                String
+  intervalDays             Int                    @default(30)
+  estimatedDurationMinutes Int?
+  priority                 WorkOrderPriority      @default(MEDIUM)
+  nextDueAt                DateTime?
+  lastGeneratedAt          DateTime?
+  isActive                 Boolean                @default(true)
+  tasks                    MaintenancePlanTask[]
+  assets                   MaintenancePlanAsset[]
+  workOrders               WorkOrder[]
+  createdAt                DateTime               @default(now())
+  updatedAt                DateTime               @updatedAt
+
+  @@index([isActive])
+  @@index([type])
+  @@index([nextDueAt])
+}
+
+model MaintenancePlanTask {
   id          String          @id @default(uuid())
-  name        String
+  planId      String
+  plan        MaintenancePlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  title       String
   description String?
-  type        MaintenanceType @default(PREVENTIVE)
-  frequency   String
-  isActive    Boolean         @default(true)
+  sortOrder   Int             @default(0)
+  isRequired  Boolean         @default(true)
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
+
+  @@index([planId])
+}
+
+model MaintenancePlanAsset {
+  planId     String
+  assetId    String
+  plan       MaintenancePlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  asset      Asset           @relation(fields: [assetId], references: [id])
+  assignedAt DateTime        @default(now())
+
+  @@id([planId, assetId])
+  @@index([assetId])
 }
 
 model ServiceRequest {

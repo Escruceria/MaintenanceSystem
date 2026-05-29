@@ -25,6 +25,7 @@ Ya existe:
 - Ordenes de trabajo operativas.
 - CRUD de inventario/repuestos.
 - Dashboard conectado a datos reales desde API.
+- Planes de mantenimiento preventivo operativos.
 - Modulos base del backend.
 - Documentacion inicial.
 - Repositorio GitHub.
@@ -314,10 +315,21 @@ Frecuencias soportadas:
 
 Entregables:
 
-- Plan por activo.
-- Tareas del plan.
-- Generacion de ordenes.
+- CRUD de planes de mantenimiento. Estado: implementado.
+- Plan asociado a uno o varios activos. Estado: implementado.
+- Tareas/checklist del plan. Estado: implementado.
+- Generacion de ordenes preventivas desde un plan. Estado: implementado.
+- Prevencion de orden duplicada activa por plan y activo. Estado: implementado.
+- Calculo de proxima fecha `nextDueAt` con `intervalDays`. Estado: implementado.
 - Calendario de proximos mantenimientos.
+
+Reglas implementadas:
+
+- Codigo unico normalizado en mayusculas.
+- Solo generar ordenes desde planes activos.
+- Solo generar ordenes para activos activos.
+- Bloquear eliminacion de planes con ordenes generadas.
+- Mantener trazabilidad de la orden generada mediante `maintenancePlanId`.
 
 ## Fase 8 - Inventario y proveedores
 

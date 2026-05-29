@@ -437,6 +437,82 @@ Reglas:
 - Los ajustes no pueden dejar el stock en negativo.
 - No se puede eliminar un repuesto usado en ordenes de trabajo.
 
+## Planes de mantenimiento
+
+Los planes de mantenimiento permiten definir rutinas preventivas, predictivas o inspecciones periodicas, asociarlas a activos y generar ordenes de trabajo programadas.
+
+Crear plan:
+
+```powershell
+curl.exe -X POST http://localhost:4000/api/maintenance-plans `
+  -H "Content-Type: application/json" `
+  -H "Authorization: Bearer <accessToken>" `
+  -d "{\"code\":\"MP-BOMBA-MENSUAL\",\"name\":\"Mantenimiento mensual de bombas\",\"type\":\"PREVENTIVE\",\"frequency\":\"Mensual\",\"intervalDays\":30,\"priority\":\"MEDIUM\",\"assetIds\":[\"<assetId>\"],\"tasks\":[{\"title\":\"Inspeccionar estado general\",\"sortOrder\":1},{\"title\":\"Verificar vibracion y ruido\",\"sortOrder\":2}]}"
+```
+
+Listar planes:
+
+```powershell
+curl.exe http://localhost:4000/api/maintenance-plans -H "Authorization: Bearer <accessToken>"
+```
+
+Consultar plan:
+
+```powershell
+curl.exe http://localhost:4000/api/maintenance-plans/<planId> -H "Authorization: Bearer <accessToken>"
+```
+
+Actualizar plan, tareas o activos asociados:
+
+```powershell
+curl.exe -X PATCH http://localhost:4000/api/maintenance-plans/<planId> `
+  -H "Content-Type: application/json" `
+  -H "Authorization: Bearer <accessToken>" `
+  -d "{\"frequency\":\"Trimestral\",\"intervalDays\":90,\"assetIds\":[\"<assetId>\"],\"tasks\":[{\"title\":\"Inspeccion trimestral\",\"sortOrder\":1}]}"
+```
+
+Activar o desactivar plan:
+
+```powershell
+curl.exe -X PATCH http://localhost:4000/api/maintenance-plans/<planId>/activate -H "Authorization: Bearer <accessToken>"
+curl.exe -X PATCH http://localhost:4000/api/maintenance-plans/<planId>/deactivate -H "Authorization: Bearer <accessToken>"
+```
+
+Generar ordenes de trabajo desde un plan:
+
+```powershell
+curl.exe -X POST http://localhost:4000/api/maintenance-plans/<planId>/generate-work-orders `
+  -H "Content-Type: application/json" `
+  -H "Authorization: Bearer <accessToken>" `
+  -d "{\"scheduledAt\":\"2026-06-15T08:00:00.000Z\"}"
+```
+
+Generar solo para un activo asociado:
+
+```powershell
+curl.exe -X POST http://localhost:4000/api/maintenance-plans/<planId>/generate-work-orders `
+  -H "Content-Type: application/json" `
+  -H "Authorization: Bearer <accessToken>" `
+  -d "{\"assetId\":\"<assetId>\"}"
+```
+
+Eliminar plan:
+
+```powershell
+curl.exe -X DELETE http://localhost:4000/api/maintenance-plans/<planId> -H "Authorization: Bearer <accessToken>"
+```
+
+Reglas:
+
+- El codigo del plan es unico y se normaliza en mayusculas.
+- Un plan puede tener varias tareas/checklist.
+- Un plan puede estar asociado a varios activos.
+- Solo se generan ordenes para activos en estado `ACTIVE`.
+- No se genera una nueva orden si ya existe una orden activa para el mismo plan y activo.
+- Al generar ordenes se actualiza `lastGeneratedAt` y se calcula `nextDueAt` sumando `intervalDays`.
+- No se puede generar desde un plan inactivo.
+- No se puede eliminar un plan que ya genero ordenes de trabajo.
+
 ## Dashboard y reportes
 
 El dashboard consume datos reales desde PostgreSQL mediante el endpoint protegido `GET /api/reports/summary`.
@@ -520,7 +596,14 @@ En Docker, el frontend usa `API_INTERNAL_URL=http://api:4000/api` para consultar
 - `PUT /api/work-orders/:id/spare-parts`
 - `PATCH /api/work-orders/:id/close`
 - `PATCH /api/work-orders/:id/cancel`
+- `POST /api/maintenance-plans`
 - `GET /api/maintenance-plans`
+- `GET /api/maintenance-plans/:id`
+- `PATCH /api/maintenance-plans/:id`
+- `PATCH /api/maintenance-plans/:id/activate`
+- `PATCH /api/maintenance-plans/:id/deactivate`
+- `POST /api/maintenance-plans/:id/generate-work-orders`
+- `DELETE /api/maintenance-plans/:id`
 - `GET /api/requests`
 - `POST /api/inventory/spare-parts`
 - `GET /api/inventory/spare-parts`
