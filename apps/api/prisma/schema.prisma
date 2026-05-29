@@ -44,6 +44,14 @@ enum MaintenanceType {
   INSPECTION
 }
 
+enum MaintenanceFrequency {
+  DAILY
+  WEEKLY
+  MONTHLY
+  YEARLY
+  ON_DATE
+}
+
 enum UserInvitationStatus {
   PENDING
   ACCEPTED
@@ -222,6 +230,7 @@ model MaintenancePlan {
   description              String?
   type                     MaintenanceType        @default(PREVENTIVE)
   frequency                String
+  frequencyType            MaintenanceFrequency   @default(MONTHLY)
   intervalDays             Int                    @default(30)
   estimatedDurationMinutes Int?
   priority                 WorkOrderPriority      @default(MEDIUM)
@@ -236,6 +245,7 @@ model MaintenancePlan {
 
   @@index([isActive])
   @@index([type])
+  @@index([frequencyType])
   @@index([nextDueAt])
 }
 

@@ -1,5 +1,9 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { MaintenanceType, WorkOrderPriority } from "@prisma/client";
+import {
+  MaintenanceFrequency,
+  MaintenanceType,
+  WorkOrderPriority,
+} from "@prisma/client";
 import { Type } from "class-transformer";
 import {
   ArrayUnique,
@@ -44,16 +48,29 @@ export class CreateMaintenancePlanDto {
   @IsEnum(MaintenanceType)
   type?: MaintenanceType;
 
-  @ApiProperty({ example: "Mensual" })
+  @ApiPropertyOptional({
+    enum: MaintenanceFrequency,
+    default: MaintenanceFrequency.MONTHLY,
+  })
+  @IsOptional()
+  @IsEnum(MaintenanceFrequency)
+  frequencyType?: MaintenanceFrequency;
+
+  @ApiPropertyOptional({
+    example: "Mensual",
+    description:
+      "Etiqueta legible. Si no se envia, se deriva de frequencyType.",
+  })
+  @IsOptional()
   @IsString()
   @MinLength(3)
   @MaxLength(80)
-  frequency!: string;
+  frequency?: string;
 
   @ApiPropertyOptional({ example: 30, default: 30 })
   @IsOptional()
   @IsInt()
-  @Min(1)
+  @Min(0)
   intervalDays?: number;
 
   @ApiPropertyOptional({ example: 120 })

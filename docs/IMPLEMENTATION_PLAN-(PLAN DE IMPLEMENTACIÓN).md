@@ -318,6 +318,7 @@ Entregables:
 - CRUD de planes de mantenimiento. Estado: implementado.
 - Plan asociado a uno o varios activos. Estado: implementado.
 - Endpoints dedicados para asociar, reemplazar y quitar activos de un plan. Estado: implementado.
+- Frecuencia tipada diaria, semanal, mensual, anual o por fecha. Estado: implementado.
 - Tareas/checklist del plan. Estado: implementado.
 - Generacion de ordenes preventivas desde un plan. Estado: implementado.
 - Prevencion de orden duplicada activa por plan y activo. Estado: implementado.
@@ -327,6 +328,8 @@ Entregables:
 Reglas implementadas:
 
 - Codigo unico normalizado en mayusculas.
+- Frecuencia controlada con `frequencyType`.
+- Planes por fecha requieren `nextDueAt`.
 - Solo generar ordenes desde planes activos.
 - Solo generar ordenes para activos activos.
 - Bloquear eliminacion de planes con ordenes generadas.

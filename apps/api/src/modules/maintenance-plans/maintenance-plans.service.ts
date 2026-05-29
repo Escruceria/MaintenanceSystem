@@ -6,6 +6,7 @@ import {
 } from "@nestjs/common";
 import {
   AssetStatus,
+  MaintenanceFrequency,
   MaintenanceType,
   Prisma,
   WorkOrderStatus,
@@ -31,6 +32,7 @@ const maintenancePlanSelect = Prisma.validator<Prisma.MaintenancePlanSelect>()({
   description: true,
   type: true,
   frequency: true,
+  frequencyType: true,
   intervalDays: true,
   estimatedDurationMinutes: true,
   priority: true,
@@ -88,7 +90,9 @@ export class MaintenancePlansService {
 
   async create(dto: CreateMaintenancePlanDto) {
     const code = this.normalizeCode(dto.code);
+    const frequencyType = dto.frequencyType ?? MaintenanceFrequency.MONTHLY;
     await this.ensureCodeIsAvailable(code);
+    this.validateFrequency(frequencyType, dto.nextDueAt);
     await this.ensureAssetsExist(dto.assetIds ?? []);
 
     const plan = await this.prisma.$transaction(async (tx) => {
@@ -98,8 +102,10 @@ export class MaintenancePlansService {
           name: dto.name.trim(),
           description: this.normalizeOptionalText(dto.description),
           type: dto.type ?? MaintenanceType.PREVENTIVE,
-          frequency: dto.frequency.trim(),
-          intervalDays: dto.intervalDays ?? 30,
+          frequency: this.normalizeFrequency(dto.frequency, frequencyType),
+          frequencyType,
+          intervalDays:
+            dto.intervalDays ?? this.getDefaultIntervalDays(frequencyType),
           estimatedDurationMinutes: dto.estimatedDurationMinutes,
           priority: dto.priority,
           nextDueAt: dto.nextDueAt ? new Date(dto.nextDueAt) : undefined,
@@ -153,6 +159,23 @@ export class MaintenancePlansService {
     }
 
     const plan = await this.prisma.$transaction(async (tx) => {
+      const current = await tx.maintenancePlan.findUnique({
+        where: { id },
+        select: {
+          frequencyType: true,
+          nextDueAt: true,
+        },
+      });
+      const nextFrequencyType = dto.frequencyType ?? current!.frequencyType;
+      const nextDueAt =
+        dto.nextDueAt === undefined
+          ? current!.nextDueAt
+          : dto.nextDueAt
+            ? new Date(dto.nextDueAt)
+            : null;
+
+      this.validateFrequency(nextFrequencyType, nextDueAt);
+
       await tx.maintenancePlan.update({
         where: { id },
         data: {
@@ -163,8 +186,18 @@ export class MaintenancePlansService {
               ? undefined
               : this.normalizeOptionalText(dto.description),
           type: dto.type,
-          frequency: dto.frequency?.trim(),
-          intervalDays: dto.intervalDays,
+          frequency:
+            dto.frequency === undefined
+              ? dto.frequencyType
+                ? this.getFrequencyLabel(dto.frequencyType)
+                : undefined
+              : this.normalizeFrequency(dto.frequency, nextFrequencyType),
+          frequencyType: dto.frequencyType,
+          intervalDays:
+            dto.intervalDays ??
+            (dto.frequencyType
+              ? this.getDefaultIntervalDays(dto.frequencyType)
+              : undefined),
           estimatedDurationMinutes: dto.estimatedDurationMinutes,
           priority: dto.priority,
           nextDueAt:
@@ -322,6 +355,7 @@ export class MaintenancePlansService {
         description: true,
         type: true,
         priority: true,
+        frequencyType: true,
         intervalDays: true,
         nextDueAt: true,
         isActive: true,
@@ -433,8 +467,11 @@ export class MaintenancePlansService {
       generated.push(workOrder);
     }
 
-    const nextDueAt = new Date(scheduledAt);
-    nextDueAt.setDate(nextDueAt.getDate() + plan.intervalDays);
+    const nextDueAt = this.calculateNextDueAt(
+      scheduledAt,
+      plan.frequencyType,
+      plan.intervalDays,
+    );
 
     await this.prisma.maintenancePlan.update({
       where: { id },
@@ -544,6 +581,67 @@ export class MaintenancePlansService {
     return `OT-${datePart}-${String(count + 1).padStart(4, "0")}`;
   }
 
+  private validateFrequency(
+    frequencyType: MaintenanceFrequency,
+    nextDueAt?: Date | string | null,
+  ) {
+    if (frequencyType === MaintenanceFrequency.ON_DATE && !nextDueAt) {
+      throw new BadRequestException("Los planes por fecha requieren nextDueAt");
+    }
+  }
+
+  private getDefaultIntervalDays(frequencyType: MaintenanceFrequency) {
+    const intervals: Record<MaintenanceFrequency, number> = {
+      [MaintenanceFrequency.DAILY]: 1,
+      [MaintenanceFrequency.WEEKLY]: 7,
+      [MaintenanceFrequency.MONTHLY]: 30,
+      [MaintenanceFrequency.YEARLY]: 365,
+      [MaintenanceFrequency.ON_DATE]: 0,
+    };
+
+    return intervals[frequencyType];
+  }
+
+  private getFrequencyLabel(frequencyType: MaintenanceFrequency) {
+    const labels: Record<MaintenanceFrequency, string> = {
+      [MaintenanceFrequency.DAILY]: "Diaria",
+      [MaintenanceFrequency.WEEKLY]: "Semanal",
+      [MaintenanceFrequency.MONTHLY]: "Mensual",
+      [MaintenanceFrequency.YEARLY]: "Anual",
+      [MaintenanceFrequency.ON_DATE]: "Por fecha",
+    };
+
+    return labels[frequencyType];
+  }
+
+  private calculateNextDueAt(
+    scheduledAt: Date,
+    frequencyType: MaintenanceFrequency,
+    intervalDays: number,
+  ) {
+    if (frequencyType === MaintenanceFrequency.ON_DATE) {
+      return null;
+    }
+
+    const nextDueAt = new Date(scheduledAt);
+
+    if (frequencyType === MaintenanceFrequency.MONTHLY) {
+      nextDueAt.setMonth(nextDueAt.getMonth() + 1);
+      return nextDueAt;
+    }
+
+    if (frequencyType === MaintenanceFrequency.YEARLY) {
+      nextDueAt.setFullYear(nextDueAt.getFullYear() + 1);
+      return nextDueAt;
+    }
+
+    nextDueAt.setDate(
+      nextDueAt.getDate() +
+        (intervalDays || this.getDefaultIntervalDays(frequencyType)),
+    );
+    return nextDueAt;
+  }
+
   private buildGeneratedDescription(plan: {
     description: string | null;
     tasks: { title: string; sortOrder: number }[];
@@ -562,6 +660,16 @@ export class MaintenancePlansService {
     return code.trim().toUpperCase();
   }
 
+  private normalizeFrequency(
+    frequency: string | undefined,
+    frequencyType: MaintenanceFrequency,
+  ) {
+    return (
+      this.normalizeOptionalText(frequency) ??
+      this.getFrequencyLabel(frequencyType)
+    );
+  }
+
   private normalizeOptionalText(value?: string | null) {
     const normalized = value?.trim();
 
@@ -576,6 +684,7 @@ export class MaintenancePlansService {
       description: plan.description,
       type: plan.type,
       frequency: plan.frequency,
+      frequencyType: plan.frequencyType,
       intervalDays: plan.intervalDays,
       estimatedDurationMinutes: plan.estimatedDurationMinutes,
       priority: plan.priority,

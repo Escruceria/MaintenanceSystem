@@ -441,13 +441,30 @@ Reglas:
 
 Los planes de mantenimiento permiten definir rutinas preventivas, predictivas o inspecciones periodicas, asociarlas a activos y generar ordenes de trabajo programadas.
 
+Frecuencias disponibles:
+
+- `DAILY`: diaria.
+- `WEEKLY`: semanal.
+- `MONTHLY`: mensual.
+- `YEARLY`: anual.
+- `ON_DATE`: por fecha unica.
+
 Crear plan:
 
 ```powershell
 curl.exe -X POST http://localhost:4000/api/maintenance-plans `
   -H "Content-Type: application/json" `
   -H "Authorization: Bearer <accessToken>" `
-  -d "{\"code\":\"MP-BOMBA-MENSUAL\",\"name\":\"Mantenimiento mensual de bombas\",\"type\":\"PREVENTIVE\",\"frequency\":\"Mensual\",\"intervalDays\":30,\"priority\":\"MEDIUM\",\"assetIds\":[\"<assetId>\"],\"tasks\":[{\"title\":\"Inspeccionar estado general\",\"sortOrder\":1},{\"title\":\"Verificar vibracion y ruido\",\"sortOrder\":2}]}"
+  -d "{\"code\":\"MP-BOMBA-MENSUAL\",\"name\":\"Mantenimiento mensual de bombas\",\"type\":\"PREVENTIVE\",\"frequencyType\":\"MONTHLY\",\"priority\":\"MEDIUM\",\"assetIds\":[\"<assetId>\"],\"tasks\":[{\"title\":\"Inspeccionar estado general\",\"sortOrder\":1},{\"title\":\"Verificar vibracion y ruido\",\"sortOrder\":2}]}"
+```
+
+Crear plan por fecha unica:
+
+```powershell
+curl.exe -X POST http://localhost:4000/api/maintenance-plans `
+  -H "Content-Type: application/json" `
+  -H "Authorization: Bearer <accessToken>" `
+  -d "{\"code\":\"MP-INSPECCION-UNICA\",\"name\":\"Inspeccion unica de garantia\",\"type\":\"INSPECTION\",\"frequencyType\":\"ON_DATE\",\"nextDueAt\":\"2026-06-15T08:00:00.000Z\",\"assetIds\":[\"<assetId>\"]}"
 ```
 
 Listar planes:
@@ -468,7 +485,7 @@ Actualizar plan, tareas o activos asociados:
 curl.exe -X PATCH http://localhost:4000/api/maintenance-plans/<planId> `
   -H "Content-Type: application/json" `
   -H "Authorization: Bearer <accessToken>" `
-  -d "{\"frequency\":\"Trimestral\",\"intervalDays\":90,\"assetIds\":[\"<assetId>\"],\"tasks\":[{\"title\":\"Inspeccion trimestral\",\"sortOrder\":1}]}"
+  -d "{\"frequencyType\":\"WEEKLY\",\"assetIds\":[\"<assetId>\"],\"tasks\":[{\"title\":\"Inspeccion semanal\",\"sortOrder\":1}]}"
 ```
 
 Asociar un activo al plan:
@@ -528,12 +545,16 @@ curl.exe -X DELETE http://localhost:4000/api/maintenance-plans/<planId> -H "Auth
 Reglas:
 
 - El codigo del plan es unico y se normaliza en mayusculas.
+- La frecuencia operativa se define con `frequencyType`; `frequency` queda como etiqueta legible.
+- Si no se envia `frequency`, la API la deriva de `frequencyType`.
+- Si no se envia `intervalDays`, la API asigna 1, 7, 30, 365 o 0 segun la frecuencia.
+- Los planes `ON_DATE` requieren `nextDueAt` y no calculan una siguiente fecha despues de generar orden.
 - Un plan puede tener varias tareas/checklist.
 - Un plan puede estar asociado a varios activos.
 - La asociacion plan-activo puede administrarse desde el CRUD del plan o desde rutas dedicadas.
 - Solo se generan ordenes para activos en estado `ACTIVE`.
 - No se genera una nueva orden si ya existe una orden activa para el mismo plan y activo.
-- Al generar ordenes se actualiza `lastGeneratedAt` y se calcula `nextDueAt` sumando `intervalDays`.
+- Al generar ordenes se actualiza `lastGeneratedAt` y se calcula `nextDueAt` segun la frecuencia.
 - No se puede generar desde un plan inactivo.
 - No se puede eliminar un plan que ya genero ordenes de trabajo.
 
