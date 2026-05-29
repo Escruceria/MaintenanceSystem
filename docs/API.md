@@ -80,9 +80,77 @@ curl.exe -X POST http://localhost:4000/api/invitations/<invitationId>/cancel `
   -H "Authorization: Bearer <accessToken>"
 ```
 
+## CRUD de usuarios
+
+Crear usuario administrativo:
+
+```powershell
+curl.exe -X POST http://localhost:4000/api/users `
+  -H "Content-Type: application/json" `
+  -H "Authorization: Bearer <accessToken>" `
+  -d "{\"email\":\"operador@empresa.com\",\"name\":\"Operador de mantenimiento\",\"password\":\"Usuario123*\",\"roleIds\":[\"<roleId>\"]}"
+```
+
+Listar usuarios:
+
+```powershell
+curl.exe http://localhost:4000/api/users -H "Authorization: Bearer <accessToken>"
+```
+
+Consultar usuario:
+
+```powershell
+curl.exe http://localhost:4000/api/users/<userId> -H "Authorization: Bearer <accessToken>"
+```
+
+Actualizar usuario:
+
+```powershell
+curl.exe -X PATCH http://localhost:4000/api/users/<userId> `
+  -H "Content-Type: application/json" `
+  -H "Authorization: Bearer <accessToken>" `
+  -d "{\"name\":\"Nombre actualizado\",\"status\":\"ACTIVE\"}"
+```
+
+Activar o desactivar usuario:
+
+```powershell
+curl.exe -X PATCH http://localhost:4000/api/users/<userId>/activate -H "Authorization: Bearer <accessToken>"
+curl.exe -X PATCH http://localhost:4000/api/users/<userId>/deactivate -H "Authorization: Bearer <accessToken>"
+```
+
+Listar roles disponibles:
+
+```powershell
+curl.exe http://localhost:4000/api/users/roles -H "Authorization: Bearer <accessToken>"
+```
+
+Asignar roles:
+
+```powershell
+curl.exe -X PUT http://localhost:4000/api/users/<userId>/roles `
+  -H "Content-Type: application/json" `
+  -H "Authorization: Bearer <accessToken>" `
+  -d "{\"roleIds\":[\"<roleId>\"]}"
+```
+
+Reglas:
+
+- Las respuestas no devuelven `passwordHash`.
+- Un usuario administrador no puede desactivar su propia cuenta.
+- Un usuario administrador no puede quitarse a si mismo el rol `ADMIN`.
+- Al desactivar un usuario se revocan sus refresh tokens activos.
+
 ## Rutas protegidas actuales
 
+- `POST /api/users`
 - `GET /api/users`
+- `GET /api/users/roles`
+- `GET /api/users/:id`
+- `PATCH /api/users/:id`
+- `PATCH /api/users/:id/activate`
+- `PATCH /api/users/:id/deactivate`
+- `PUT /api/users/:id/roles`
 - `GET /api/invitations`
 - `POST /api/invitations`
 - `POST /api/invitations/:id/cancel`

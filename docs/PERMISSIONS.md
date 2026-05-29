@@ -113,7 +113,14 @@ Permisos principales:
 
 | Endpoint                           | Permiso requerido        |
 | ---------------------------------- | ------------------------ |
+| `POST /api/users`                  | `users:write`            |
 | `GET /api/users`                   | `users:read`             |
+| `GET /api/users/roles`             | `roles:read`             |
+| `GET /api/users/:id`               | `users:read`             |
+| `PATCH /api/users/:id`             | `users:write`            |
+| `PATCH /api/users/:id/activate`    | `users:write`            |
+| `PATCH /api/users/:id/deactivate`  | `users:write`            |
+| `PUT /api/users/:id/roles`         | `users:write`            |
 | `GET /api/invitations`             | `users:read`             |
 | `POST /api/invitations`            | `users:write`            |
 | `POST /api/invitations/:id/cancel` | `users:write`            |

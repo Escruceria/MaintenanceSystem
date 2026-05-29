@@ -19,6 +19,7 @@ Ya existe:
 - Usuario administrador inicial.
 - Registro seguro por invitacion.
 - Guard base por permisos.
+- CRUD administrativo de usuarios.
 - Modulos base del backend.
 - Documentacion inicial.
 - Repositorio GitHub.
@@ -37,7 +38,6 @@ Faltan:
 - Proveedores asociados a activos.
 - Responsables de activos.
 - Planes asociados a activos.
-- Permisos granulares aplicados a todos los modulos.
 - CRUDs completos.
 - Dashboard conectado a datos reales.
 
@@ -47,7 +47,7 @@ El desarrollo operativo continuara en este orden:
 
 1. Invitaciones de usuario: registro seguro por token, sin registro publico.
 2. Roles y permisos reales: guards por permiso, no solo JWT.
-3. CRUD de usuarios: crear, listar, activar/desactivar y asignar roles.
+3. CRUD de usuarios: crear, listar, activar/desactivar y asignar roles. Estado: implementado.
 4. CRUD de ubicaciones: sedes, areas y jerarquias.
 5. CRUD de activos/equipos: codigo, nombre, serial, marca, modelo, estado y ubicacion.
 6. Ordenes de trabajo: crear, asignar, cambiar estados y cerrar.
@@ -162,8 +162,28 @@ Pendiente futuro:
 
 - CRUD de roles.
 - CRUD de permisos.
-- Asignacion de roles desde el CRUD de usuarios.
 - Politicas por sede o alcance organizacional.
+
+## Fase 4.1 - CRUD de usuarios
+
+Objetivo: administrar usuarios internos sin registro publico libre.
+
+Entregables:
+
+- Crear usuario administrativo. Estado: implementado.
+- Listar usuarios. Estado: implementado.
+- Consultar usuario por id. Estado: implementado.
+- Actualizar nombre, correo y estado. Estado: implementado.
+- Activar usuario. Estado: implementado.
+- Desactivar usuario y revocar refresh tokens. Estado: implementado.
+- Listar roles disponibles. Estado: implementado.
+- Asignar roles reemplazando la matriz actual del usuario. Estado: implementado.
+
+Reglas implementadas:
+
+- No devolver `passwordHash`.
+- No permitir que un usuario se desactive a si mismo.
+- No permitir que un administrador se quite a si mismo el rol `ADMIN`.
 
 ## Fase 5 - Invitaciones de usuario
 
