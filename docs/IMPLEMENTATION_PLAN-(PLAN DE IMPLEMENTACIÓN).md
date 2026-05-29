@@ -22,6 +22,7 @@ Ya existe:
 - CRUD administrativo de usuarios.
 - CRUD jerarquico de ubicaciones.
 - CRUD real de activos/equipos.
+- Ordenes de trabajo operativas.
 - Modulos base del backend.
 - Documentacion inicial.
 - Repositorio GitHub.
@@ -52,7 +53,7 @@ El desarrollo operativo continuara en este orden:
 3. CRUD de usuarios: crear, listar, activar/desactivar y asignar roles. Estado: implementado.
 4. CRUD de ubicaciones: sedes, areas y jerarquias. Estado: implementado.
 5. CRUD de activos/equipos: codigo, nombre, serial, marca, modelo, estado y ubicacion. Estado: implementado.
-6. Ordenes de trabajo: crear, asignar, cambiar estados y cerrar.
+6. Ordenes de trabajo: crear, asignar, cambiar estados y cerrar. Estado: implementado.
 
 ## Fase 1 - Documentacion del dominio
 
@@ -259,14 +260,24 @@ Objetivo: crear el ciclo operativo de mantenimiento.
 
 Entregables:
 
-- Crear orden.
-- Asignar tecnico.
-- Cambiar estado.
-- Registrar tiempos.
-- Asociar repuestos.
+- Crear orden. Estado: implementado.
+- Asignar tecnico. Estado: implementado.
+- Cambiar estado. Estado: implementado.
+- Registrar tiempos de inicio y cierre. Estado: implementado.
+- Asociar repuestos. Estado: implementado.
 - Registrar evidencias.
-- Cerrar orden.
+- Cerrar orden. Estado: implementado.
 - Auditar cambios.
+
+Reglas implementadas:
+
+- Generacion automatica de numero de orden.
+- Validacion de activo existente.
+- Validacion de tecnico activo.
+- Validacion de repuestos existentes.
+- Descuento de stock al cerrar.
+- Bloqueo de modificaciones en ordenes completadas o canceladas.
+- Bloqueo de cierre cuando no hay stock suficiente.
 
 Estados:
 

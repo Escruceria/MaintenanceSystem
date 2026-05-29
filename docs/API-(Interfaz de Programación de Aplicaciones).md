@@ -288,6 +288,92 @@ Reglas:
 - No se puede eliminar un activo con ordenes o solicitudes asociadas.
 - Para conservar historia operativa, un activo con trazabilidad debe retirarse usando estado `RETIRED`.
 
+## Ordenes de trabajo
+
+Las ordenes de trabajo conectan un activo con un tipo de mantenimiento, prioridad, tecnico asignado, estado operativo y repuestos utilizados.
+
+Crear orden:
+
+```powershell
+curl.exe -X POST http://localhost:4000/api/work-orders `
+  -H "Content-Type: application/json" `
+  -H "Authorization: Bearer <accessToken>" `
+  -d "{\"title\":\"Reparar bomba\",\"type\":\"CORRECTIVE\",\"priority\":\"HIGH\",\"assetId\":\"<assetId>\",\"assignedTechnicianId\":\"<userId>\"}"
+```
+
+Listar ordenes:
+
+```powershell
+curl.exe http://localhost:4000/api/work-orders -H "Authorization: Bearer <accessToken>"
+```
+
+Consultar orden:
+
+```powershell
+curl.exe http://localhost:4000/api/work-orders/<workOrderId> -H "Authorization: Bearer <accessToken>"
+```
+
+Actualizar datos de la orden:
+
+```powershell
+curl.exe -X PATCH http://localhost:4000/api/work-orders/<workOrderId> `
+  -H "Content-Type: application/json" `
+  -H "Authorization: Bearer <accessToken>" `
+  -d "{\"priority\":\"CRITICAL\",\"status\":\"IN_PROGRESS\"}"
+```
+
+Asignar tecnico:
+
+```powershell
+curl.exe -X PATCH http://localhost:4000/api/work-orders/<workOrderId>/assign `
+  -H "Content-Type: application/json" `
+  -H "Authorization: Bearer <accessToken>" `
+  -d "{\"technicianId\":\"<userId>\"}"
+```
+
+Cambiar estado:
+
+```powershell
+curl.exe -X PATCH http://localhost:4000/api/work-orders/<workOrderId>/status `
+  -H "Content-Type: application/json" `
+  -H "Authorization: Bearer <accessToken>" `
+  -d "{\"status\":\"IN_PROGRESS\"}"
+```
+
+Asociar repuestos:
+
+```powershell
+curl.exe -X PUT http://localhost:4000/api/work-orders/<workOrderId>/spare-parts `
+  -H "Content-Type: application/json" `
+  -H "Authorization: Bearer <accessToken>" `
+  -d "{\"spareParts\":[{\"sparePartId\":\"<sparePartId>\",\"quantity\":2}]}"
+```
+
+Cerrar orden:
+
+```powershell
+curl.exe -X PATCH http://localhost:4000/api/work-orders/<workOrderId>/close `
+  -H "Content-Type: application/json" `
+  -H "Authorization: Bearer <accessToken>" `
+  -d "{\"spareParts\":[{\"sparePartId\":\"<sparePartId>\",\"quantity\":2}]}"
+```
+
+Cancelar orden:
+
+```powershell
+curl.exe -X PATCH http://localhost:4000/api/work-orders/<workOrderId>/cancel -H "Authorization: Bearer <accessToken>"
+```
+
+Reglas:
+
+- Si no se envia numero, la API genera un numero `OT-YYYYMMDD-0001`.
+- El activo asociado debe existir.
+- El tecnico asignado debe ser un usuario activo.
+- Los repuestos asociados deben existir.
+- Al cerrar la orden se descuenta stock de los repuestos asociados.
+- No se puede modificar una orden completada o cancelada.
+- No se puede cerrar una orden si algun repuesto no tiene stock suficiente.
+
 ## Rutas protegidas actuales
 
 - `POST /api/users`
@@ -316,7 +402,15 @@ Reglas:
 - `PATCH /api/assets/:id/activate`
 - `PATCH /api/assets/:id/retire`
 - `DELETE /api/assets/:id`
+- `POST /api/work-orders`
 - `GET /api/work-orders`
+- `GET /api/work-orders/:id`
+- `PATCH /api/work-orders/:id`
+- `PATCH /api/work-orders/:id/assign`
+- `PATCH /api/work-orders/:id/status`
+- `PUT /api/work-orders/:id/spare-parts`
+- `PATCH /api/work-orders/:id/close`
+- `PATCH /api/work-orders/:id/cancel`
 - `GET /api/maintenance-plans`
 - `GET /api/requests`
 - `GET /api/inventory/spare-parts`
