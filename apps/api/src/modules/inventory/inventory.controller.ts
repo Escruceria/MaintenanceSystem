@@ -1,17 +1,68 @@
-import { Controller, Get, UseGuards } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  UseGuards,
+} from "@nestjs/common";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { Permissions } from "../auth/decorators/permissions.decorator";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { PermissionsGuard } from "../auth/guards/permissions.guard";
+import { AdjustStockDto } from "./dto/adjust-stock.dto";
+import { CreateSparePartDto } from "./dto/create-spare-part.dto";
+import { UpdateSparePartDto } from "./dto/update-spare-part.dto";
+import { InventoryService } from "./inventory.service";
 
 @ApiTags("inventory")
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, PermissionsGuard)
 @Controller("inventory")
 export class InventoryController {
+  constructor(private readonly inventory: InventoryService) {}
+
+  @Permissions("inventory:write")
+  @Post("spare-parts")
+  createSparePart(@Body() dto: CreateSparePartDto) {
+    return this.inventory.createSparePart(dto);
+  }
+
   @Permissions("inventory:read")
   @Get("spare-parts")
   findSpareParts() {
-    return [];
+    return this.inventory.findSpareParts();
+  }
+
+  @Permissions("inventory:read")
+  @Get("spare-parts/low-stock")
+  findLowStockSpareParts() {
+    return this.inventory.findLowStockSpareParts();
+  }
+
+  @Permissions("inventory:read")
+  @Get("spare-parts/:id")
+  findSparePart(@Param("id") id: string) {
+    return this.inventory.findSparePart(id);
+  }
+
+  @Permissions("inventory:write")
+  @Patch("spare-parts/:id")
+  updateSparePart(@Param("id") id: string, @Body() dto: UpdateSparePartDto) {
+    return this.inventory.updateSparePart(id, dto);
+  }
+
+  @Permissions("inventory:write")
+  @Patch("spare-parts/:id/stock")
+  adjustStock(@Param("id") id: string, @Body() dto: AdjustStockDto) {
+    return this.inventory.adjustStock(id, dto);
+  }
+
+  @Permissions("inventory:write")
+  @Delete("spare-parts/:id")
+  removeSparePart(@Param("id") id: string) {
+    return this.inventory.removeSparePart(id);
   }
 }

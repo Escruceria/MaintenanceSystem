@@ -23,6 +23,7 @@ Ya existe:
 - CRUD jerarquico de ubicaciones.
 - CRUD real de activos/equipos.
 - Ordenes de trabajo operativas.
+- CRUD de inventario/repuestos.
 - Modulos base del backend.
 - Documentacion inicial.
 - Repositorio GitHub.
@@ -322,13 +323,21 @@ Objetivo: controlar repuestos, consumibles y proveedores.
 
 Entregables:
 
-- CRUD de repuestos.
-- Stock minimo.
-- Entradas y salidas.
+- CRUD de repuestos. Estado: implementado.
+- Stock minimo. Estado: implementado.
+- Ajustes de stock. Estado: implementado.
 - Salida por orden de trabajo.
 - Proveedores.
 - Costos.
-- Alertas de inventario.
+- Alertas de inventario por bajo stock. Estado: implementado como endpoint.
+
+Reglas implementadas:
+
+- SKU unico normalizado en mayusculas.
+- Unidad normalizada en mayusculas.
+- Stock y stock minimo sin valores negativos.
+- Ajustes de stock sin permitir inventario negativo.
+- Bloqueo de eliminacion cuando el repuesto ya fue usado en ordenes.
 
 ## Fase 9 - Dashboard e indicadores
 

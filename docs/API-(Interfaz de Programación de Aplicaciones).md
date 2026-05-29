@@ -374,6 +374,69 @@ Reglas:
 - No se puede modificar una orden completada o cancelada.
 - No se puede cerrar una orden si algun repuesto no tiene stock suficiente.
 
+## Inventario y repuestos
+
+Los repuestos son elementos consumibles o piezas usadas por las ordenes de trabajo.
+
+Crear repuesto:
+
+```powershell
+curl.exe -X POST http://localhost:4000/api/inventory/spare-parts `
+  -H "Content-Type: application/json" `
+  -H "Authorization: Bearer <accessToken>" `
+  -d "{\"sku\":\"REP-0001\",\"name\":\"Rodamiento 6204\",\"unit\":\"UND\",\"stock\":10,\"minimumStock\":2}"
+```
+
+Listar repuestos:
+
+```powershell
+curl.exe http://localhost:4000/api/inventory/spare-parts -H "Authorization: Bearer <accessToken>"
+```
+
+Listar repuestos bajo minimo:
+
+```powershell
+curl.exe http://localhost:4000/api/inventory/spare-parts/low-stock -H "Authorization: Bearer <accessToken>"
+```
+
+Consultar repuesto:
+
+```powershell
+curl.exe http://localhost:4000/api/inventory/spare-parts/<sparePartId> -H "Authorization: Bearer <accessToken>"
+```
+
+Actualizar repuesto:
+
+```powershell
+curl.exe -X PATCH http://localhost:4000/api/inventory/spare-parts/<sparePartId> `
+  -H "Content-Type: application/json" `
+  -H "Authorization: Bearer <accessToken>" `
+  -d "{\"name\":\"Rodamiento 6204 actualizado\",\"minimumStock\":5}"
+```
+
+Ajustar stock:
+
+```powershell
+curl.exe -X PATCH http://localhost:4000/api/inventory/spare-parts/<sparePartId>/stock `
+  -H "Content-Type: application/json" `
+  -H "Authorization: Bearer <accessToken>" `
+  -d "{\"quantity\":5,\"reason\":\"Compra inicial\"}"
+```
+
+Eliminar repuesto:
+
+```powershell
+curl.exe -X DELETE http://localhost:4000/api/inventory/spare-parts/<sparePartId> -H "Authorization: Bearer <accessToken>"
+```
+
+Reglas:
+
+- El SKU es unico y se normaliza en mayusculas.
+- La unidad se normaliza en mayusculas.
+- El stock y el stock minimo no pueden ser negativos.
+- Los ajustes no pueden dejar el stock en negativo.
+- No se puede eliminar un repuesto usado en ordenes de trabajo.
+
 ## Rutas protegidas actuales
 
 - `POST /api/users`
@@ -413,7 +476,13 @@ Reglas:
 - `PATCH /api/work-orders/:id/cancel`
 - `GET /api/maintenance-plans`
 - `GET /api/requests`
+- `POST /api/inventory/spare-parts`
 - `GET /api/inventory/spare-parts`
+- `GET /api/inventory/spare-parts/low-stock`
+- `GET /api/inventory/spare-parts/:id`
+- `PATCH /api/inventory/spare-parts/:id`
+- `PATCH /api/inventory/spare-parts/:id/stock`
+- `DELETE /api/inventory/spare-parts/:id`
 - `GET /api/suppliers`
 - `GET /api/reports/summary`
 - `GET /api/audit`
