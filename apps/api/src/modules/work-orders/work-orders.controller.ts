@@ -17,9 +17,11 @@ import { AuthenticatedUser } from "../auth/types/authenticated-user";
 import { AssignWorkOrderDto } from "./dto/assign-work-order.dto";
 import { ChangeWorkOrderStatusDto } from "./dto/change-work-order-status.dto";
 import { CloseWorkOrderDto } from "./dto/close-work-order.dto";
+import { CreateWorkOrderEvidenceDto } from "./dto/create-work-order-evidence.dto";
 import { CreateWorkOrderDto } from "./dto/create-work-order.dto";
 import { SetWorkOrderPartsDto } from "./dto/set-work-order-parts.dto";
 import { UpdateWorkOrderChecklistItemDto } from "./dto/update-work-order-checklist-item.dto";
+import { UpdateWorkOrderExecutionNotesDto } from "./dto/update-work-order-execution-notes.dto";
 import { UpdateWorkOrderDto } from "./dto/update-work-order.dto";
 import { WorkOrdersService } from "./work-orders.service";
 
@@ -87,6 +89,31 @@ export class WorkOrdersController {
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.workOrders.updateChecklistItem(id, itemId, dto, user);
+  }
+
+  @Permissions("work-orders:write")
+  @Patch(":id/execution-notes")
+  updateExecutionNotes(
+    @Param("id") id: string,
+    @Body() dto: UpdateWorkOrderExecutionNotesDto,
+  ) {
+    return this.workOrders.updateExecutionNotes(id, dto);
+  }
+
+  @Permissions("work-orders:read")
+  @Get(":id/evidences")
+  getEvidences(@Param("id") id: string) {
+    return this.workOrders.getEvidences(id);
+  }
+
+  @Permissions("work-orders:write")
+  @Post(":id/evidences")
+  addEvidence(
+    @Param("id") id: string,
+    @Body() dto: CreateWorkOrderEvidenceDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.workOrders.addEvidence(id, dto, user);
   }
 
   @Permissions("work-orders:close")

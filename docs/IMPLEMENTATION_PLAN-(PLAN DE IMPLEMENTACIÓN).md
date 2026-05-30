@@ -272,7 +272,8 @@ Entregables:
 - Checklist ejecutable por orden. Estado: implementado.
 - Marcar tarea realizada, no realizada o no aplica. Estado: implementado.
 - Registrar observacion, usuario ejecutor y fecha por tarea. Estado: implementado.
-- Registrar evidencias.
+- Registrar notas finales y recomendaciones de ejecucion. Estado: implementado.
+- Registrar evidencias de mantenimiento como observaciones, fotos o documentos. Estado: implementado.
 - Cerrar orden. Estado: implementado.
 - Auditar cambios.
 
@@ -287,6 +288,10 @@ Reglas implementadas:
 - Bloqueo de cierre cuando no hay stock suficiente.
 - Las ordenes generadas desde planes copian las tareas del plan como checklist ejecutable.
 - El cierre valida que todas las tareas obligatorias esten completadas.
+- Las notas finales y recomendaciones pueden guardarse durante la ejecucion o al cerrar.
+- Las evidencias `PHOTO` y `DOCUMENT` requieren referencia de archivo mediante `fileUrl`.
+- Las evidencias conservan tipo, titulo, descripcion, archivo relacionado, usuario que registra y fecha.
+- No se registran notas ni evidencias sobre ordenes canceladas.
 
 Estados:
 

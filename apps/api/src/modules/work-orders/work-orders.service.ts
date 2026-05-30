@@ -9,6 +9,7 @@ import {
   Prisma,
   UserStatus,
   WorkOrderChecklistItemStatus,
+  WorkOrderEvidenceType,
   WorkOrderStatus,
 } from "@prisma/client";
 import { AuthenticatedUser } from "../auth/types/authenticated-user";
@@ -16,9 +17,11 @@ import { PrismaService } from "../prisma/prisma.service";
 import { AssignWorkOrderDto } from "./dto/assign-work-order.dto";
 import { ChangeWorkOrderStatusDto } from "./dto/change-work-order-status.dto";
 import { CloseWorkOrderDto } from "./dto/close-work-order.dto";
+import { CreateWorkOrderEvidenceDto } from "./dto/create-work-order-evidence.dto";
 import { CreateWorkOrderDto } from "./dto/create-work-order.dto";
 import { SetWorkOrderPartsDto } from "./dto/set-work-order-parts.dto";
 import { UpdateWorkOrderChecklistItemDto } from "./dto/update-work-order-checklist-item.dto";
+import { UpdateWorkOrderExecutionNotesDto } from "./dto/update-work-order-execution-notes.dto";
 import { UpdateWorkOrderDto } from "./dto/update-work-order.dto";
 import { WorkOrderPartDto } from "./dto/work-order-part.dto";
 
@@ -59,6 +62,8 @@ const workOrderSelect = Prisma.validator<Prisma.WorkOrderSelect>()({
   scheduledAt: true,
   startedAt: true,
   completedAt: true,
+  finalNotes: true,
+  recommendations: true,
   spareParts: {
     select: {
       quantity: true,
@@ -96,6 +101,27 @@ const workOrderSelect = Prisma.validator<Prisma.WorkOrderSelect>()({
       updatedAt: true,
     },
     orderBy: [{ sortOrder: "asc" }, { title: "asc" }],
+  },
+  evidences: {
+    select: {
+      id: true,
+      type: true,
+      title: true,
+      description: true,
+      fileUrl: true,
+      fileName: true,
+      mimeType: true,
+      uploadedBy: {
+        select: {
+          id: true,
+          email: true,
+          name: true,
+        },
+      },
+      createdAt: true,
+      updatedAt: true,
+    },
+    orderBy: [{ createdAt: "desc" }],
   },
   createdAt: true,
   updatedAt: true,
@@ -371,6 +397,106 @@ export class WorkOrdersService {
     return updatedItem;
   }
 
+  async updateExecutionNotes(
+    id: string,
+    dto: UpdateWorkOrderExecutionNotesDto,
+  ) {
+    const current = await this.ensureWorkOrderExists(id);
+    this.ensureNotCancelled(current.status);
+
+    const workOrder = await this.prisma.workOrder.update({
+      where: { id },
+      data: {
+        finalNotes:
+          dto.finalNotes === undefined
+            ? undefined
+            : this.normalizeOptionalText(dto.finalNotes),
+        recommendations:
+          dto.recommendations === undefined
+            ? undefined
+            : this.normalizeOptionalText(dto.recommendations),
+      },
+      select: workOrderSelect,
+    });
+
+    return this.toWorkOrderResponse(workOrder);
+  }
+
+  async getEvidences(id: string) {
+    await this.ensureWorkOrderExists(id);
+
+    return this.prisma.workOrderEvidence.findMany({
+      where: { workOrderId: id },
+      orderBy: [{ createdAt: "desc" }],
+      select: {
+        id: true,
+        type: true,
+        title: true,
+        description: true,
+        fileUrl: true,
+        fileName: true,
+        mimeType: true,
+        uploadedBy: {
+          select: {
+            id: true,
+            email: true,
+            name: true,
+          },
+        },
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+  }
+
+  async addEvidence(
+    id: string,
+    dto: CreateWorkOrderEvidenceDto,
+    user: AuthenticatedUser,
+  ) {
+    const current = await this.ensureWorkOrderExists(id);
+    this.ensureNotCancelled(current.status);
+
+    const fileUrl = this.normalizeOptionalText(dto.fileUrl);
+
+    if (dto.type !== WorkOrderEvidenceType.NOTE && !fileUrl) {
+      throw new BadRequestException(
+        "Las evidencias de foto o documento requieren fileUrl",
+      );
+    }
+
+    return this.prisma.workOrderEvidence.create({
+      data: {
+        workOrderId: id,
+        type: dto.type,
+        title: dto.title.trim(),
+        description: this.normalizeOptionalText(dto.description),
+        fileUrl,
+        fileName: this.normalizeOptionalText(dto.fileName),
+        mimeType: this.normalizeOptionalText(dto.mimeType),
+        uploadedById: user.sub,
+      },
+      select: {
+        id: true,
+        type: true,
+        title: true,
+        description: true,
+        fileUrl: true,
+        fileName: true,
+        mimeType: true,
+        uploadedBy: {
+          select: {
+            id: true,
+            email: true,
+            name: true,
+          },
+        },
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+  }
+
   async close(id: string, dto: CloseWorkOrderDto) {
     const current = await this.ensureWorkOrderExists(id);
     this.validateStatusChange(current.status, WorkOrderStatus.COMPLETED);
@@ -422,6 +548,14 @@ export class WorkOrdersService {
           status: WorkOrderStatus.COMPLETED,
           startedAt: current.startedAt ?? new Date(),
           completedAt: dto.completedAt ? new Date(dto.completedAt) : new Date(),
+          finalNotes:
+            dto.finalNotes === undefined
+              ? undefined
+              : this.normalizeOptionalText(dto.finalNotes),
+          recommendations:
+            dto.recommendations === undefined
+              ? undefined
+              : this.normalizeOptionalText(dto.recommendations),
         },
         select: workOrderSelect,
       });
@@ -581,6 +715,12 @@ export class WorkOrdersService {
     }
   }
 
+  private ensureNotCancelled(status: WorkOrderStatus) {
+    if (status === WorkOrderStatus.CANCELLED) {
+      throw new BadRequestException("No se puede modificar una orden cancelada");
+    }
+  }
+
   private async generateNumber() {
     const datePart = new Date().toISOString().slice(0, 10).replace(/-/g, "");
     const count = await this.prisma.workOrder.count({
@@ -620,11 +760,14 @@ export class WorkOrdersService {
       scheduledAt: workOrder.scheduledAt,
       startedAt: workOrder.startedAt,
       completedAt: workOrder.completedAt,
+      finalNotes: workOrder.finalNotes,
+      recommendations: workOrder.recommendations,
       spareParts: workOrder.spareParts.map((part) => ({
         sparePart: part.sparePart,
         quantity: part.quantity,
       })),
       checklistItems: workOrder.checklistItems,
+      evidences: workOrder.evidences,
       createdAt: workOrder.createdAt,
       updatedAt: workOrder.updatedAt,
     };

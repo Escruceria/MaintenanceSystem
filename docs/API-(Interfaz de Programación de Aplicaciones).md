@@ -377,7 +377,40 @@ Cerrar orden:
 curl.exe -X PATCH http://localhost:4000/api/work-orders/<workOrderId>/close `
   -H "Content-Type: application/json" `
   -H "Authorization: Bearer <accessToken>" `
-  -d "{\"spareParts\":[{\"sparePartId\":\"<sparePartId>\",\"quantity\":2}]}"
+  -d "{\"finalNotes\":\"Activo probado y entregado operativo\",\"recommendations\":\"Revisar vibracion en el proximo preventivo\",\"spareParts\":[{\"sparePartId\":\"<sparePartId>\",\"quantity\":2}]}"
+```
+
+Registrar notas de ejecucion sin cerrar la orden:
+
+```powershell
+curl.exe -X PATCH http://localhost:4000/api/work-orders/<workOrderId>/execution-notes `
+  -H "Content-Type: application/json" `
+  -H "Authorization: Bearer <accessToken>" `
+  -d "{\"finalNotes\":\"Se realizo limpieza y ajuste general\",\"recommendations\":\"Programar inspeccion termografica\"}"
+```
+
+Consultar evidencias:
+
+```powershell
+curl.exe http://localhost:4000/api/work-orders/<workOrderId>/evidences -H "Authorization: Bearer <accessToken>"
+```
+
+Registrar evidencia tipo observacion:
+
+```powershell
+curl.exe -X POST http://localhost:4000/api/work-orders/<workOrderId>/evidences `
+  -H "Content-Type: application/json" `
+  -H "Authorization: Bearer <accessToken>" `
+  -d "{\"type\":\"NOTE\",\"title\":\"Observacion final\",\"description\":\"Equipo queda operativo y sin alarmas\"}"
+```
+
+Registrar evidencia tipo foto o documento:
+
+```powershell
+curl.exe -X POST http://localhost:4000/api/work-orders/<workOrderId>/evidences `
+  -H "Content-Type: application/json" `
+  -H "Authorization: Bearer <accessToken>" `
+  -d "{\"type\":\"PHOTO\",\"title\":\"Foto posterior al mantenimiento\",\"description\":\"Estado final del activo\",\"fileUrl\":\"https://storage.local/work-orders/ot-0001/photo-1.jpg\",\"fileName\":\"photo-1.jpg\",\"mimeType\":\"image/jpeg\"}"
 ```
 
 Cancelar orden:
@@ -398,6 +431,11 @@ Reglas:
 - Las ordenes generadas desde un plan copian el checklist vigente del plan.
 - Cada tarea ejecutada registra estado, observacion opcional, usuario ejecutor y fecha de ejecucion.
 - No se puede cerrar una orden si tiene tareas obligatorias pendientes, no realizadas o no aplicables.
+- Las notas finales y recomendaciones pueden registrarse durante la ejecucion o al cerrar la orden.
+- Las evidencias pueden ser `NOTE`, `PHOTO` o `DOCUMENT`.
+- Las evidencias `PHOTO` y `DOCUMENT` requieren `fileUrl`; el almacenamiento fisico del archivo queda desacoplado para una integracion posterior con disco, MinIO, S3 u otro proveedor.
+- Las evidencias conservan usuario que las registro y fecha de creacion.
+- No se pueden agregar evidencias ni notas sobre ordenes canceladas.
 
 ## Inventario y repuestos
 
@@ -721,6 +759,9 @@ En Docker, el frontend usa `API_INTERNAL_URL=http://api:4000/api` para consultar
 - `PUT /api/work-orders/:id/spare-parts`
 - `GET /api/work-orders/:id/checklist`
 - `PATCH /api/work-orders/:id/checklist/:itemId`
+- `PATCH /api/work-orders/:id/execution-notes`
+- `GET /api/work-orders/:id/evidences`
+- `POST /api/work-orders/:id/evidences`
 - `PATCH /api/work-orders/:id/close`
 - `PATCH /api/work-orders/:id/cancel`
 - `POST /api/maintenance-plans`

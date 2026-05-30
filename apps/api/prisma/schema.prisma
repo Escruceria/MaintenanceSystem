@@ -59,6 +59,12 @@ enum WorkOrderChecklistItemStatus {
   NOT_APPLICABLE
 }
 
+enum WorkOrderEvidenceType {
+  PHOTO
+  DOCUMENT
+  NOTE
+}
+
 enum UserInvitationStatus {
   PENDING
   ACCEPTED
@@ -89,6 +95,7 @@ model User {
   acceptedInvitations UserInvitation[]         @relation("InvitationAcceptedUser")
   assignedOrders      WorkOrder[]              @relation("AssignedTechnician")
   checklistExecutions WorkOrderChecklistItem[] @relation("ChecklistExecutor")
+  workOrderEvidences  WorkOrderEvidence[]      @relation("EvidenceUploader")
   requestedItems      ServiceRequest[]
   auditEvents         AuditEvent[]
   createdAt           DateTime                 @default(now())
@@ -226,8 +233,11 @@ model WorkOrder {
   scheduledAt          DateTime?
   startedAt            DateTime?
   completedAt          DateTime?
+  finalNotes           String?
+  recommendations      String?
   spareParts           WorkOrderPart[]
   checklistItems       WorkOrderChecklistItem[]
+  evidences            WorkOrderEvidence[]
   createdAt            DateTime                 @default(now())
   updatedAt            DateTime                 @updatedAt
 }
@@ -296,6 +306,26 @@ model WorkOrderChecklistItem {
   @@index([maintenancePlanTaskId])
   @@index([status])
   @@index([executedById])
+}
+
+model WorkOrderEvidence {
+  id           String                @id @default(uuid())
+  workOrderId  String
+  workOrder    WorkOrder             @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+  type         WorkOrderEvidenceType
+  title        String
+  description  String?
+  fileUrl      String?
+  fileName     String?
+  mimeType     String?
+  uploadedById String
+  uploadedBy   User                  @relation("EvidenceUploader", fields: [uploadedById], references: [id])
+  createdAt    DateTime              @default(now())
+  updatedAt    DateTime              @updatedAt
+
+  @@index([workOrderId])
+  @@index([type])
+  @@index([uploadedById])
 }
 
 model MaintenancePlanAsset {
