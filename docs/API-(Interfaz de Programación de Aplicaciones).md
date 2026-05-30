@@ -349,6 +349,28 @@ curl.exe -X PUT http://localhost:4000/api/work-orders/<workOrderId>/spare-parts 
   -d "{\"spareParts\":[{\"sparePartId\":\"<sparePartId>\",\"quantity\":2}]}"
 ```
 
+Consultar checklist de la orden:
+
+```powershell
+curl.exe http://localhost:4000/api/work-orders/<workOrderId>/checklist -H "Authorization: Bearer <accessToken>"
+```
+
+Actualizar una tarea del checklist:
+
+```powershell
+curl.exe -X PATCH http://localhost:4000/api/work-orders/<workOrderId>/checklist/<checklistItemId> `
+  -H "Content-Type: application/json" `
+  -H "Authorization: Bearer <accessToken>" `
+  -d "{\"status\":\"COMPLETED\",\"notes\":\"Tarea ejecutada sin novedad\"}"
+```
+
+Estados disponibles para tareas de checklist:
+
+- `PENDING`: pendiente.
+- `COMPLETED`: realizada.
+- `NOT_COMPLETED`: no realizada.
+- `NOT_APPLICABLE`: no aplica.
+
 Cerrar orden:
 
 ```powershell
@@ -373,6 +395,9 @@ Reglas:
 - Al cerrar la orden se descuenta stock de los repuestos asociados.
 - No se puede modificar una orden completada o cancelada.
 - No se puede cerrar una orden si algun repuesto no tiene stock suficiente.
+- Las ordenes generadas desde un plan copian el checklist vigente del plan.
+- Cada tarea ejecutada registra estado, observacion opcional, usuario ejecutor y fecha de ejecucion.
+- No se puede cerrar una orden si tiene tareas obligatorias pendientes, no realizadas o no aplicables.
 
 ## Inventario y repuestos
 
@@ -590,6 +615,7 @@ Reglas:
 - La asociacion plan-activo puede administrarse desde el CRUD del plan o desde rutas dedicadas.
 - Solo se generan ordenes para activos en estado `ACTIVE`.
 - No se genera una nueva orden si ya existe una orden activa para el mismo plan y activo.
+- Las tareas del plan se copian como checklist ejecutable en cada orden generada.
 - Al generar ordenes se actualiza `lastGeneratedAt` y se calcula `nextDueAt` segun la frecuencia.
 - No se puede generar desde un plan inactivo.
 - No se puede eliminar un plan que ya genero ordenes de trabajo.
@@ -693,6 +719,8 @@ En Docker, el frontend usa `API_INTERNAL_URL=http://api:4000/api` para consultar
 - `PATCH /api/work-orders/:id/assign`
 - `PATCH /api/work-orders/:id/status`
 - `PUT /api/work-orders/:id/spare-parts`
+- `GET /api/work-orders/:id/checklist`
+- `PATCH /api/work-orders/:id/checklist/:itemId`
 - `PATCH /api/work-orders/:id/close`
 - `PATCH /api/work-orders/:id/cancel`
 - `POST /api/maintenance-plans`

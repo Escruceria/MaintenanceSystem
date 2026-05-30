@@ -52,6 +52,13 @@ enum MaintenanceFrequency {
   ON_DATE
 }
 
+enum WorkOrderChecklistItemStatus {
+  PENDING
+  COMPLETED
+  NOT_COMPLETED
+  NOT_APPLICABLE
+}
+
 enum UserInvitationStatus {
   PENDING
   ACCEPTED
@@ -71,20 +78,21 @@ enum LocationType {
 }
 
 model User {
-  id                  String           @id @default(uuid())
-  email               String           @unique
+  id                  String                   @id @default(uuid())
+  email               String                   @unique
   name                String
   passwordHash        String
-  status              UserStatus       @default(INVITED)
+  status              UserStatus               @default(INVITED)
   roles               UserRole[]
   refreshTokens       RefreshToken[]
-  sentInvitations     UserInvitation[] @relation("InvitationInviter")
-  acceptedInvitations UserInvitation[] @relation("InvitationAcceptedUser")
-  assignedOrders      WorkOrder[]      @relation("AssignedTechnician")
+  sentInvitations     UserInvitation[]         @relation("InvitationInviter")
+  acceptedInvitations UserInvitation[]         @relation("InvitationAcceptedUser")
+  assignedOrders      WorkOrder[]              @relation("AssignedTechnician")
+  checklistExecutions WorkOrderChecklistItem[] @relation("ChecklistExecutor")
   requestedItems      ServiceRequest[]
   auditEvents         AuditEvent[]
-  createdAt           DateTime         @default(now())
-  updatedAt           DateTime         @updatedAt
+  createdAt           DateTime                 @default(now())
+  updatedAt           DateTime                 @updatedAt
 }
 
 model UserInvitation {
@@ -202,25 +210,26 @@ model Asset {
 }
 
 model WorkOrder {
-  id                   String            @id @default(uuid())
-  number               String            @unique
+  id                   String                   @id @default(uuid())
+  number               String                   @unique
   title                String
   description          String?
   type                 MaintenanceType
-  priority             WorkOrderPriority @default(MEDIUM)
-  status               WorkOrderStatus   @default(OPEN)
+  priority             WorkOrderPriority        @default(MEDIUM)
+  status               WorkOrderStatus          @default(OPEN)
   assetId              String
-  asset                Asset             @relation(fields: [assetId], references: [id])
+  asset                Asset                    @relation(fields: [assetId], references: [id])
   assignedTechnicianId String?
-  assignedTechnician   User?             @relation("AssignedTechnician", fields: [assignedTechnicianId], references: [id])
+  assignedTechnician   User?                    @relation("AssignedTechnician", fields: [assignedTechnicianId], references: [id])
   maintenancePlanId    String?
-  maintenancePlan      MaintenancePlan?  @relation(fields: [maintenancePlanId], references: [id])
+  maintenancePlan      MaintenancePlan?         @relation(fields: [maintenancePlanId], references: [id])
   scheduledAt          DateTime?
   startedAt            DateTime?
   completedAt          DateTime?
   spareParts           WorkOrderPart[]
-  createdAt            DateTime          @default(now())
-  updatedAt            DateTime          @updatedAt
+  checklistItems       WorkOrderChecklistItem[]
+  createdAt            DateTime                 @default(now())
+  updatedAt            DateTime                 @updatedAt
 }
 
 model MaintenancePlan {
@@ -250,17 +259,43 @@ model MaintenancePlan {
 }
 
 model MaintenancePlanTask {
-  id          String          @id @default(uuid())
-  planId      String
-  plan        MaintenancePlan @relation(fields: [planId], references: [id], onDelete: Cascade)
-  title       String
-  description String?
-  sortOrder   Int             @default(0)
-  isRequired  Boolean         @default(true)
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
+  id             String                   @id @default(uuid())
+  planId         String
+  plan           MaintenancePlan          @relation(fields: [planId], references: [id], onDelete: Cascade)
+  title          String
+  description    String?
+  sortOrder      Int                      @default(0)
+  isRequired     Boolean                  @default(true)
+  workOrderItems WorkOrderChecklistItem[]
+  createdAt      DateTime                 @default(now())
+  updatedAt      DateTime                 @updatedAt
 
   @@index([planId])
+}
+
+model WorkOrderChecklistItem {
+  id                    String                       @id @default(uuid())
+  workOrderId           String
+  workOrder             WorkOrder                    @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+  maintenancePlanTaskId String?
+  maintenancePlanTask   MaintenancePlanTask?         @relation(fields: [maintenancePlanTaskId], references: [id], onDelete: SetNull)
+  title                 String
+  description           String?
+  sortOrder             Int                          @default(0)
+  isRequired            Boolean                      @default(true)
+  status                WorkOrderChecklistItemStatus @default(PENDING)
+  notes                 String?
+  executedById          String?
+  executedBy            User?                        @relation("ChecklistExecutor", fields: [executedById], references: [id])
+  executedAt            DateTime?
+  createdAt             DateTime                     @default(now())
+  updatedAt             DateTime                     @updatedAt
+
+  @@unique([workOrderId, maintenancePlanTaskId])
+  @@index([workOrderId])
+  @@index([maintenancePlanTaskId])
+  @@index([status])
+  @@index([executedById])
 }
 
 model MaintenancePlanAsset {

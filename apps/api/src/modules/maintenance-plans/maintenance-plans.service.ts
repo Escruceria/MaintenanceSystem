@@ -446,8 +446,11 @@ export class MaintenancePlansService {
         },
         tasks: {
           select: {
+            id: true,
             title: true,
+            description: true,
             sortOrder: true,
+            isRequired: true,
           },
           orderBy: [{ sortOrder: "asc" }, { title: "asc" }],
         },
@@ -519,6 +522,15 @@ export class MaintenancePlansService {
           assetId: asset.id,
           maintenancePlanId: plan.id,
           scheduledAt,
+          checklistItems: {
+            create: plan.tasks.map((task) => ({
+              maintenancePlanTaskId: task.id,
+              title: task.title,
+              description: task.description,
+              sortOrder: task.sortOrder,
+              isRequired: task.isRequired,
+            })),
+          },
         },
         select: {
           id: true,
@@ -533,6 +545,11 @@ export class MaintenancePlansService {
             },
           },
           scheduledAt: true,
+          _count: {
+            select: {
+              checklistItems: true,
+            },
+          },
         },
       });
 

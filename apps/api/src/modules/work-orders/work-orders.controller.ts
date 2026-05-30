@@ -9,14 +9,17 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
+import { CurrentUser } from "../auth/decorators/current-user.decorator";
 import { Permissions } from "../auth/decorators/permissions.decorator";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { PermissionsGuard } from "../auth/guards/permissions.guard";
+import { AuthenticatedUser } from "../auth/types/authenticated-user";
 import { AssignWorkOrderDto } from "./dto/assign-work-order.dto";
 import { ChangeWorkOrderStatusDto } from "./dto/change-work-order-status.dto";
 import { CloseWorkOrderDto } from "./dto/close-work-order.dto";
 import { CreateWorkOrderDto } from "./dto/create-work-order.dto";
 import { SetWorkOrderPartsDto } from "./dto/set-work-order-parts.dto";
+import { UpdateWorkOrderChecklistItemDto } from "./dto/update-work-order-checklist-item.dto";
 import { UpdateWorkOrderDto } from "./dto/update-work-order.dto";
 import { WorkOrdersService } from "./work-orders.service";
 
@@ -67,6 +70,23 @@ export class WorkOrdersController {
   @Put(":id/spare-parts")
   setSpareParts(@Param("id") id: string, @Body() dto: SetWorkOrderPartsDto) {
     return this.workOrders.setSpareParts(id, dto);
+  }
+
+  @Permissions("work-orders:read")
+  @Get(":id/checklist")
+  getChecklist(@Param("id") id: string) {
+    return this.workOrders.getChecklist(id);
+  }
+
+  @Permissions("work-orders:write")
+  @Patch(":id/checklist/:itemId")
+  updateChecklistItem(
+    @Param("id") id: string,
+    @Param("itemId") itemId: string,
+    @Body() dto: UpdateWorkOrderChecklistItemDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.workOrders.updateChecklistItem(id, itemId, dto, user);
   }
 
   @Permissions("work-orders:close")

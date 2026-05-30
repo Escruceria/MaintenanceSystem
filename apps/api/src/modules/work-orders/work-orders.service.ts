@@ -8,14 +8,17 @@ import {
   AssetStatus,
   Prisma,
   UserStatus,
+  WorkOrderChecklistItemStatus,
   WorkOrderStatus,
 } from "@prisma/client";
+import { AuthenticatedUser } from "../auth/types/authenticated-user";
 import { PrismaService } from "../prisma/prisma.service";
 import { AssignWorkOrderDto } from "./dto/assign-work-order.dto";
 import { ChangeWorkOrderStatusDto } from "./dto/change-work-order-status.dto";
 import { CloseWorkOrderDto } from "./dto/close-work-order.dto";
 import { CreateWorkOrderDto } from "./dto/create-work-order.dto";
 import { SetWorkOrderPartsDto } from "./dto/set-work-order-parts.dto";
+import { UpdateWorkOrderChecklistItemDto } from "./dto/update-work-order-checklist-item.dto";
 import { UpdateWorkOrderDto } from "./dto/update-work-order.dto";
 import { WorkOrderPartDto } from "./dto/work-order-part.dto";
 
@@ -70,6 +73,29 @@ const workOrderSelect = Prisma.validator<Prisma.WorkOrderSelect>()({
       },
     },
     orderBy: { sparePart: { name: "asc" } },
+  },
+  checklistItems: {
+    select: {
+      id: true,
+      maintenancePlanTaskId: true,
+      title: true,
+      description: true,
+      sortOrder: true,
+      isRequired: true,
+      status: true,
+      notes: true,
+      executedAt: true,
+      executedBy: {
+        select: {
+          id: true,
+          email: true,
+          name: true,
+        },
+      },
+      createdAt: true,
+      updatedAt: true,
+    },
+    orderBy: [{ sortOrder: "asc" }, { title: "asc" }],
   },
   createdAt: true,
   updatedAt: true,
@@ -258,9 +284,97 @@ export class WorkOrdersService {
     return this.toWorkOrderResponse(workOrder!);
   }
 
+  async getChecklist(id: string) {
+    await this.ensureWorkOrderExists(id);
+
+    const checklistItems = await this.prisma.workOrderChecklistItem.findMany({
+      where: { workOrderId: id },
+      orderBy: [{ sortOrder: "asc" }, { title: "asc" }],
+      select: {
+        id: true,
+        maintenancePlanTaskId: true,
+        title: true,
+        description: true,
+        sortOrder: true,
+        isRequired: true,
+        status: true,
+        notes: true,
+        executedAt: true,
+        executedBy: {
+          select: {
+            id: true,
+            email: true,
+            name: true,
+          },
+        },
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+
+    return checklistItems;
+  }
+
+  async updateChecklistItem(
+    id: string,
+    itemId: string,
+    dto: UpdateWorkOrderChecklistItemDto,
+    user: AuthenticatedUser,
+  ) {
+    const current = await this.ensureWorkOrderExists(id);
+    this.ensureNotTerminal(current.status);
+
+    const item = await this.prisma.workOrderChecklistItem.findFirst({
+      where: { id: itemId, workOrderId: id },
+      select: { id: true },
+    });
+
+    if (!item) {
+      throw new NotFoundException("Tarea de checklist no encontrada");
+    }
+
+    const isPending = dto.status === WorkOrderChecklistItemStatus.PENDING;
+
+    const updatedItem = await this.prisma.workOrderChecklistItem.update({
+      where: { id: itemId },
+      data: {
+        status: dto.status,
+        notes:
+          dto.notes === undefined
+            ? undefined
+            : this.normalizeOptionalText(dto.notes),
+        executedById: isPending ? null : user.sub,
+        executedAt: isPending ? null : new Date(),
+      },
+      select: {
+        id: true,
+        maintenancePlanTaskId: true,
+        title: true,
+        description: true,
+        sortOrder: true,
+        isRequired: true,
+        status: true,
+        notes: true,
+        executedAt: true,
+        executedBy: {
+          select: {
+            id: true,
+            email: true,
+            name: true,
+          },
+        },
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+
+    return updatedItem;
+  }
+
   async close(id: string, dto: CloseWorkOrderDto) {
     const current = await this.ensureWorkOrderExists(id);
     this.validateStatusChange(current.status, WorkOrderStatus.COMPLETED);
+    await this.ensureRequiredChecklistCompleted(id);
 
     if (dto.spareParts) {
       await this.ensureSparePartsExist(dto.spareParts);
@@ -413,6 +527,24 @@ export class WorkOrdersService {
     }
   }
 
+  private async ensureRequiredChecklistCompleted(workOrderId: string) {
+    const pendingRequiredItems = await this.prisma.workOrderChecklistItem.count(
+      {
+        where: {
+          workOrderId,
+          isRequired: true,
+          status: { not: WorkOrderChecklistItemStatus.COMPLETED },
+        },
+      },
+    );
+
+    if (pendingRequiredItems > 0) {
+      throw new BadRequestException(
+        "No se puede cerrar la orden con tareas obligatorias pendientes o no realizadas",
+      );
+    }
+  }
+
   private async ensureNumberIsAvailable(number: string) {
     const workOrder = await this.prisma.workOrder.findUnique({
       where: { number },
@@ -492,6 +624,7 @@ export class WorkOrdersService {
         sparePart: part.sparePart,
         quantity: part.quantity,
       })),
+      checklistItems: workOrder.checklistItems,
       createdAt: workOrder.createdAt,
       updatedAt: workOrder.updatedAt,
     };

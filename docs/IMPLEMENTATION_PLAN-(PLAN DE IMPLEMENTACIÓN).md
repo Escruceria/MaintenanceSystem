@@ -269,6 +269,9 @@ Entregables:
 - Cambiar estado. Estado: implementado.
 - Registrar tiempos de inicio y cierre. Estado: implementado.
 - Asociar repuestos. Estado: implementado.
+- Checklist ejecutable por orden. Estado: implementado.
+- Marcar tarea realizada, no realizada o no aplica. Estado: implementado.
+- Registrar observacion, usuario ejecutor y fecha por tarea. Estado: implementado.
 - Registrar evidencias.
 - Cerrar orden. Estado: implementado.
 - Auditar cambios.
@@ -282,6 +285,8 @@ Reglas implementadas:
 - Descuento de stock al cerrar.
 - Bloqueo de modificaciones en ordenes completadas o canceladas.
 - Bloqueo de cierre cuando no hay stock suficiente.
+- Las ordenes generadas desde planes copian las tareas del plan como checklist ejecutable.
+- El cierre valida que todas las tareas obligatorias esten completadas.
 
 Estados:
 

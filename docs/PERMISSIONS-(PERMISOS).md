@@ -92,8 +92,8 @@ Permisos principales:
 | `locations:write`         | Crear y actualizar sedes, areas y ubicaciones             |
 | `assets:read`             | Leer activos y equipos                                    |
 | `assets:write`            | Crear y actualizar activos y equipos                      |
-| `work-orders:read`        | Leer ordenes de trabajo                                   |
-| `work-orders:write`       | Crear y actualizar ordenes de trabajo                     |
+| `work-orders:read`        | Leer ordenes de trabajo y su checklist ejecutable         |
+| `work-orders:write`       | Crear, actualizar ordenes y ejecutar checklist            |
 | `work-orders:assign`      | Asignar ordenes de trabajo                                |
 | `work-orders:close`       | Cerrar ordenes de trabajo                                 |
 | `maintenance-plans:read`  | Leer planes de mantenimiento                              |
@@ -146,6 +146,8 @@ Permisos principales:
 | `PATCH /api/work-orders/:id/assign`                    | `work-orders:assign`                            |
 | `PATCH /api/work-orders/:id/status`                    | `work-orders:write`                             |
 | `PUT /api/work-orders/:id/spare-parts`                 | `work-orders:write`                             |
+| `GET /api/work-orders/:id/checklist`                   | `work-orders:read`                              |
+| `PATCH /api/work-orders/:id/checklist/:itemId`         | `work-orders:write`                             |
 | `PATCH /api/work-orders/:id/close`                     | `work-orders:close`                             |
 | `PATCH /api/work-orders/:id/cancel`                    | `work-orders:write`                             |
 | `POST /api/maintenance-plans`                          | `maintenance-plans:write`                       |
