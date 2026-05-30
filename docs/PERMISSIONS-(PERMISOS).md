@@ -90,7 +90,7 @@ Permisos principales:
 | `roles:write`             | Administrar roles y permisos                              |
 | `locations:read`          | Leer sedes, areas y ubicaciones                           |
 | `locations:write`         | Crear y actualizar sedes, areas y ubicaciones             |
-| `assets:read`             | Leer activos y equipos                                    |
+| `assets:read`             | Leer activos, equipos e historial                         |
 | `assets:write`            | Crear y actualizar activos y equipos                      |
 | `work-orders:read`        | Leer ordenes de trabajo, checklist y evidencias           |
 | `work-orders:write`       | Crear, actualizar ordenes, ejecutar checklist y registrar evidencias |
@@ -135,6 +135,7 @@ Permisos principales:
 | `POST /api/assets`                                     | `assets:write`                                  |
 | `GET /api/assets`                                      | `assets:read`                                   |
 | `GET /api/assets/:id`                                  | `assets:read`                                   |
+| `GET /api/assets/:id/history`                          | `assets:read`                                   |
 | `PATCH /api/assets/:id`                                | `assets:write`                                  |
 | `PATCH /api/assets/:id/activate`                       | `assets:write`                                  |
 | `PATCH /api/assets/:id/retire`                         | `assets:write`                                  |

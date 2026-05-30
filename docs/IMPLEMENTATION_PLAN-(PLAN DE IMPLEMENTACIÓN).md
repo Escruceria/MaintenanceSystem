@@ -127,6 +127,7 @@ Entregables:
 - Crear activo/equipo. Estado: implementado.
 - Listar activos/equipos. Estado: implementado.
 - Consultar activo por id. Estado: implementado.
+- Consultar historial avanzado del activo. Estado: implementado.
 - Actualizar codigo, nombre, descripcion, serial, marca, modelo, QR, estado y ubicacion. Estado: implementado.
 - Activar activo. Estado: implementado.
 - Retirar activo. Estado: implementado.
@@ -139,6 +140,7 @@ Reglas implementadas:
 - Validacion de ubicacion existente.
 - Bloqueo de eliminacion cuando existan ordenes o solicitudes asociadas.
 - Respuesta con conteo de ordenes, solicitudes y ubicacion resumida.
+- El historial del activo consolida ordenes, tipos de mantenimiento, evidencias, repuestos, tecnicos, fechas y linea de tiempo operativa.
 
 ## Fase 4 - Roles y permisos reales
 

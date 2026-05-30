@@ -36,6 +36,12 @@ export class AssetsController {
   }
 
   @Permissions("assets:read")
+  @Get(":id/history")
+  getHistory(@Param("id") id: string) {
+    return this.assets.getHistory(id);
+  }
+
+  @Permissions("assets:read")
   @Get(":id")
   findOne(@Param("id") id: string) {
     return this.assets.findOne(id);

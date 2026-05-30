@@ -257,6 +257,23 @@ Consultar activo:
 curl.exe http://localhost:4000/api/assets/<assetId> -H "Authorization: Bearer <accessToken>"
 ```
 
+Consultar historial del activo:
+
+```powershell
+curl.exe http://localhost:4000/api/assets/<assetId>/history -H "Authorization: Bearer <accessToken>"
+```
+
+El historial consolida:
+
+- Datos generales y estado actual del activo.
+- Ordenes asociadas al activo.
+- Mantenimientos por tipo: correctivo, preventivo, predictivo e inspeccion.
+- Evidencias registradas en las ordenes.
+- Repuestos usados y cantidades acumuladas.
+- Tecnicos que intervinieron y cantidad de ordenes asociadas.
+- Fechas de programacion, inicio y cierre.
+- Linea de tiempo operativa derivada de registros, inicios, cierres y estado actual.
+
 Actualizar activo:
 
 ```powershell
@@ -746,6 +763,7 @@ En Docker, el frontend usa `API_INTERNAL_URL=http://api:4000/api` para consultar
 - `POST /api/assets`
 - `GET /api/assets`
 - `GET /api/assets/:id`
+- `GET /api/assets/:id/history`
 - `PATCH /api/assets/:id`
 - `PATCH /api/assets/:id/activate`
 - `PATCH /api/assets/:id/retire`
