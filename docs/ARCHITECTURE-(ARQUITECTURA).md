@@ -17,6 +17,8 @@ PostgreSQL es la fuente de verdad y Prisma define el modelo de datos inicial.
 
 Docker Compose permite levantar un entorno aislado con PostgreSQL, API y frontend.
 
+El almacenamiento de evidencias usa disco local del API para el entorno actual. La ruta base se define con `UPLOAD_ROOT`, se expone bajo `/uploads/` y en Docker se persiste mediante el volumen `evidence-storage`. Esta decision mantiene el ciclo operativo completo sin bloquear una evolucion futura hacia MinIO, S3 u otro proveedor compatible.
+
 ## Principios
 
 - API modular por dominio.
@@ -75,4 +77,3 @@ Cada modulo del API debe evolucionar con esta estructura:
 - PostgreSQL Docker: `5433`
 
 El puerto `5433` evita conflicto con PostgreSQL instalado localmente en Windows.
-

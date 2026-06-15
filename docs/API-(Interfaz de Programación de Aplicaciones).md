@@ -430,6 +430,17 @@ curl.exe -X POST http://localhost:4000/api/work-orders/<workOrderId>/evidences `
   -d "{\"type\":\"PHOTO\",\"title\":\"Foto posterior al mantenimiento\",\"description\":\"Estado final del activo\",\"fileUrl\":\"https://storage.local/work-orders/ot-0001/photo-1.jpg\",\"fileName\":\"photo-1.jpg\",\"mimeType\":\"image/jpeg\"}"
 ```
 
+Subir archivo real como evidencia:
+
+```powershell
+curl.exe -X POST http://localhost:4000/api/work-orders/<workOrderId>/evidences/upload `
+  -H "Authorization: Bearer <accessToken>" `
+  -F "file=@C:\ruta\foto.jpg" `
+  -F "type=PHOTO" `
+  -F "title=Foto posterior al mantenimiento" `
+  -F "description=Estado final del activo"
+```
+
 Cancelar orden:
 
 ```powershell
@@ -450,7 +461,13 @@ Reglas:
 - No se puede cerrar una orden si tiene tareas obligatorias pendientes, no realizadas o no aplicables.
 - Las notas finales y recomendaciones pueden registrarse durante la ejecucion o al cerrar la orden.
 - Las evidencias pueden ser `NOTE`, `PHOTO` o `DOCUMENT`.
-- Las evidencias `PHOTO` y `DOCUMENT` requieren `fileUrl`; el almacenamiento fisico del archivo queda desacoplado para una integracion posterior con disco, MinIO, S3 u otro proveedor.
+- `POST /api/work-orders/:id/evidences` permite registrar evidencias con URL externa o metadatos ya disponibles.
+- `POST /api/work-orders/:id/evidences/upload` almacena archivos fisicos en el servidor y registra automaticamente `fileUrl`, `fileName` y `mimeType`.
+- Los archivos cargados se guardan en `storage/evidences/work-orders/<workOrderId>` o en la ruta definida por `UPLOAD_ROOT`.
+- En Docker, los archivos quedan persistidos en el volumen `evidence-storage`.
+- Los archivos se exponen de forma estatica bajo `/uploads/...`.
+- La carga real permite imagenes `jpg`, `png`, `webp`, documentos `pdf`, Word y Excel, con tamano maximo de 10 MB.
+- La carga de archivos genera auditoria con accion `WORK_ORDER_EVIDENCE_FILE_UPLOADED`.
 - Las evidencias conservan usuario que las registro y fecha de creacion.
 - No se pueden agregar evidencias ni notas sobre ordenes canceladas.
 
@@ -807,6 +824,7 @@ Eventos automaticos iniciales:
 - `PATCH /api/work-orders/:id/execution-notes`
 - `GET /api/work-orders/:id/evidences`
 - `POST /api/work-orders/:id/evidences`
+- `POST /api/work-orders/:id/evidences/upload`
 - `PATCH /api/work-orders/:id/close`
 - `PATCH /api/work-orders/:id/cancel`
 - `POST /api/maintenance-plans`

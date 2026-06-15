@@ -10,6 +10,7 @@ coverage
 postgres-data
 archivo_historico/
 img/
+storage/
 pws_bd.txt
 *.backup
 Thumbs.db

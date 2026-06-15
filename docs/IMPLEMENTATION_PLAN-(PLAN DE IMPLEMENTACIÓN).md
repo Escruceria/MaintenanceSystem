@@ -276,6 +276,7 @@ Entregables:
 - Registrar observacion, usuario ejecutor y fecha por tarea. Estado: implementado.
 - Registrar notas finales y recomendaciones de ejecucion. Estado: implementado.
 - Registrar evidencias de mantenimiento como observaciones, fotos o documentos. Estado: implementado.
+- Subir archivos reales como evidencias de ordenes. Estado: implementado.
 - Cerrar orden. Estado: implementado.
 - Auditar cambios operativos de ordenes. Estado: implementado.
 
@@ -291,10 +292,15 @@ Reglas implementadas:
 - Las ordenes generadas desde planes copian las tareas del plan como checklist ejecutable.
 - El cierre valida que todas las tareas obligatorias esten completadas.
 - Las notas finales y recomendaciones pueden guardarse durante la ejecucion o al cerrar.
-- Las evidencias `PHOTO` y `DOCUMENT` requieren referencia de archivo mediante `fileUrl`.
+- Las evidencias `PHOTO` y `DOCUMENT` pueden registrarse con `fileUrl` externo o mediante carga real de archivo.
+- La carga real guarda archivos en `storage/evidences/work-orders/<workOrderId>` o en `UPLOAD_ROOT`.
+- Docker persiste las evidencias en el volumen `evidence-storage`.
+- La API publica archivos cargados bajo `/uploads/...`.
+- La carga real acepta imagenes `jpg`, `png`, `webp`, documentos `pdf`, Word y Excel, con limite de 10 MB.
 - Las evidencias conservan tipo, titulo, descripcion, archivo relacionado, usuario que registra y fecha.
 - No se registran notas ni evidencias sobre ordenes canceladas.
 - Las acciones operativas sensibles generan eventos de auditoria con actor, accion, entidad, id y metadatos.
+- La carga real de archivos genera evento de auditoria `WORK_ORDER_EVIDENCE_FILE_UPLOADED`.
 
 Estados:
 

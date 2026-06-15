@@ -152,6 +152,7 @@ Permisos principales:
 | `PATCH /api/work-orders/:id/execution-notes`           | `work-orders:write`                             |
 | `GET /api/work-orders/:id/evidences`                   | `work-orders:read`                              |
 | `POST /api/work-orders/:id/evidences`                  | `work-orders:write`                             |
+| `POST /api/work-orders/:id/evidences/upload`           | `work-orders:write`                             |
 | `PATCH /api/work-orders/:id/close`                     | `work-orders:close`                             |
 | `PATCH /api/work-orders/:id/cancel`                    | `work-orders:write`                             |
 | `POST /api/maintenance-plans`                          | `maintenance-plans:write`                       |

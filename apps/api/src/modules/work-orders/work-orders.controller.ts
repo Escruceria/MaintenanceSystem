@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
@@ -6,9 +7,18 @@ import {
   Patch,
   Post,
   Put,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from "@nestjs/common";
-import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
+import { ConfigService } from "@nestjs/config";
+import { FileInterceptor } from "@nestjs/platform-express";
+import { ApiBearerAuth, ApiBody, ApiConsumes, ApiTags } from "@nestjs/swagger";
+import { WorkOrderEvidenceType } from "@prisma/client";
+import { randomUUID } from "node:crypto";
+import { mkdirSync } from "node:fs";
+import { extname, join } from "node:path";
+import { diskStorage } from "multer";
 import { CurrentUser } from "../auth/decorators/current-user.decorator";
 import { Permissions } from "../auth/decorators/permissions.decorator";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
@@ -23,14 +33,68 @@ import { SetWorkOrderPartsDto } from "./dto/set-work-order-parts.dto";
 import { UpdateWorkOrderChecklistItemDto } from "./dto/update-work-order-checklist-item.dto";
 import { UpdateWorkOrderExecutionNotesDto } from "./dto/update-work-order-execution-notes.dto";
 import { UpdateWorkOrderDto } from "./dto/update-work-order.dto";
+import { UploadWorkOrderEvidenceDto } from "./dto/upload-work-order-evidence.dto";
 import { WorkOrdersService } from "./work-orders.service";
+
+const allowedEvidenceMimeTypes = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.ms-excel",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+]);
+
+const evidenceFileInterceptor = FileInterceptor("file", {
+  limits: {
+    fileSize: 10 * 1024 * 1024,
+  },
+  fileFilter: (_request, file, callback) => {
+    if (!allowedEvidenceMimeTypes.has(file.mimetype)) {
+      callback(
+        new BadRequestException(
+          "Tipo de archivo no permitido para evidencias",
+        ),
+        false,
+      );
+      return;
+    }
+
+    callback(null, true);
+  },
+  storage: diskStorage({
+    destination: (request, _file, callback) => {
+      const uploadRoot =
+        process.env.UPLOAD_ROOT ?? join(process.cwd(), "storage");
+      const workOrderId = String(request.params.id);
+      const destination = join(
+        uploadRoot,
+        "evidences",
+        "work-orders",
+        workOrderId,
+      );
+
+      mkdirSync(destination, { recursive: true });
+      callback(null, destination);
+    },
+    filename: (_request, file, callback) => {
+      const extension = extname(file.originalname).toLowerCase();
+      callback(null, `${randomUUID()}${extension}`);
+    },
+  }),
+});
 
 @ApiTags("work-orders")
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, PermissionsGuard)
 @Controller("work-orders")
 export class WorkOrdersController {
-  constructor(private readonly workOrders: WorkOrdersService) {}
+  constructor(
+    private readonly workOrders: WorkOrdersService,
+    private readonly config: ConfigService,
+  ) {}
 
   @Permissions("work-orders:write")
   @Post()
@@ -134,6 +198,42 @@ export class WorkOrdersController {
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.workOrders.addEvidence(id, dto, user);
+  }
+
+  @Permissions("work-orders:write")
+  @Post(":id/evidences/upload")
+  @UseInterceptors(evidenceFileInterceptor)
+  @ApiConsumes("multipart/form-data")
+  @ApiBody({
+    schema: {
+      type: "object",
+      properties: {
+        file: {
+          type: "string",
+          format: "binary",
+        },
+        type: {
+          enum: [WorkOrderEvidenceType.PHOTO, WorkOrderEvidenceType.DOCUMENT],
+        },
+        title: {
+          type: "string",
+        },
+        description: {
+          type: "string",
+        },
+      },
+      required: ["file"],
+    },
+  })
+  uploadEvidence(
+    @Param("id") id: string,
+    @Body() dto: UploadWorkOrderEvidenceDto,
+    @UploadedFile() file: Express.Multer.File,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.workOrders.uploadEvidence(id, dto, file, user, {
+      publicBaseUrl: this.config.get<string>("UPLOAD_PUBLIC_BASE_URL"),
+    });
   }
 
   @Permissions("work-orders:close")

@@ -12,6 +12,7 @@ import {
   WorkOrderEvidenceType,
   WorkOrderStatus,
 } from "@prisma/client";
+import { unlink } from "node:fs/promises";
 import { AuditService } from "../audit/audit.service";
 import { AuthenticatedUser } from "../auth/types/authenticated-user";
 import { PrismaService } from "../prisma/prisma.service";
@@ -24,6 +25,7 @@ import { SetWorkOrderPartsDto } from "./dto/set-work-order-parts.dto";
 import { UpdateWorkOrderChecklistItemDto } from "./dto/update-work-order-checklist-item.dto";
 import { UpdateWorkOrderExecutionNotesDto } from "./dto/update-work-order-execution-notes.dto";
 import { UpdateWorkOrderDto } from "./dto/update-work-order.dto";
+import { UploadWorkOrderEvidenceDto } from "./dto/upload-work-order-evidence.dto";
 import { WorkOrderPartDto } from "./dto/work-order-part.dto";
 
 const workOrderSelect = Prisma.validator<Prisma.WorkOrderSelect>()({
@@ -624,6 +626,83 @@ export class WorkOrdersService {
     return evidence;
   }
 
+  async uploadEvidence(
+    id: string,
+    dto: UploadWorkOrderEvidenceDto,
+    file: Express.Multer.File | undefined,
+    user: AuthenticatedUser,
+    options?: { publicBaseUrl?: string },
+  ) {
+    if (!file) {
+      throw new BadRequestException("Debe adjuntar un archivo de evidencia");
+    }
+
+    try {
+      const current = await this.ensureWorkOrderExists(id);
+      this.ensureNotCancelled(current.status);
+
+      const type = dto.type ?? this.inferEvidenceType(file.mimetype);
+      this.validateUploadedEvidenceType(type, file.mimetype);
+
+      const relativeUrl = `/uploads/evidences/work-orders/${id}/${file.filename}`;
+      const fileUrl = options?.publicBaseUrl
+        ? `${options.publicBaseUrl.replace(/\/$/, "")}${relativeUrl}`
+        : relativeUrl;
+
+      const evidence = await this.prisma.workOrderEvidence.create({
+        data: {
+          workOrderId: id,
+          type,
+          title: this.normalizeOptionalText(dto.title) ?? file.originalname,
+          description: this.normalizeOptionalText(dto.description),
+          fileUrl,
+          fileName: file.originalname,
+          mimeType: file.mimetype,
+          uploadedById: user.sub,
+        },
+        select: {
+          id: true,
+          type: true,
+          title: true,
+          description: true,
+          fileUrl: true,
+          fileName: true,
+          mimeType: true,
+          uploadedBy: {
+            select: {
+              id: true,
+              email: true,
+              name: true,
+            },
+          },
+          createdAt: true,
+          updatedAt: true,
+        },
+      });
+
+      await this.audit.record({
+        actor: user,
+        action: "WORK_ORDER_EVIDENCE_FILE_UPLOADED",
+        entityType: "WorkOrderEvidence",
+        entityId: evidence.id,
+        metadata: {
+          workOrderId: id,
+          type: evidence.type,
+          title: evidence.title,
+          fileName: evidence.fileName,
+          mimeType: evidence.mimeType,
+          size: file.size,
+          fileUrl: evidence.fileUrl,
+        },
+      });
+
+      return evidence;
+    } catch (error) {
+      await this.removeUploadedFile(file.path);
+      throw error;
+    }
+  }
+
   async close(id: string, dto: CloseWorkOrderDto, actor?: AuthenticatedUser) {
     const current = await this.ensureWorkOrderExists(id);
     this.validateStatusChange(current.status, WorkOrderStatus.COMPLETED);
@@ -898,6 +977,43 @@ export class WorkOrdersService {
     const normalized = value?.trim();
 
     return normalized ? normalized : null;
+  }
+
+  private inferEvidenceType(mimeType: string) {
+    return mimeType.startsWith("image/")
+      ? WorkOrderEvidenceType.PHOTO
+      : WorkOrderEvidenceType.DOCUMENT;
+  }
+
+  private validateUploadedEvidenceType(
+    type: WorkOrderEvidenceType,
+    mimeType: string,
+  ) {
+    if (type === WorkOrderEvidenceType.NOTE) {
+      throw new BadRequestException(
+        "La carga de archivo solo permite evidencias PHOTO o DOCUMENT",
+      );
+    }
+
+    if (type === WorkOrderEvidenceType.PHOTO && !mimeType.startsWith("image/")) {
+      throw new BadRequestException(
+        "Las evidencias PHOTO requieren un archivo de imagen",
+      );
+    }
+
+    if (type === WorkOrderEvidenceType.DOCUMENT && mimeType.startsWith("image/")) {
+      throw new BadRequestException(
+        "Las evidencias DOCUMENT requieren un archivo documental",
+      );
+    }
+  }
+
+  private async removeUploadedFile(path: string) {
+    try {
+      await unlink(path);
+    } catch {
+      return;
+    }
   }
 
   private toWorkOrderAuditState(workOrder: {
