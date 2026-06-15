@@ -1,4 +1,4 @@
-import { ValidationPipe } from "@nestjs/common";
+import { RequestMethod, ValidationPipe } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { NestFactory } from "@nestjs/core";
 import { NestExpressApplication } from "@nestjs/platform-express";
@@ -10,9 +10,12 @@ import { AppModule } from "./app.module";
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   const config = app.get(ConfigService);
-  const uploadRoot = config.get<string>("UPLOAD_ROOT") ?? join(process.cwd(), "storage");
+  const uploadRoot =
+    config.get<string>("UPLOAD_ROOT") ?? join(process.cwd(), "storage");
 
-  app.setGlobalPrefix("api");
+  app.setGlobalPrefix("api", {
+    exclude: [{ path: "/", method: RequestMethod.GET }],
+  });
   app.useStaticAssets(uploadRoot, {
     prefix: "/uploads/",
   });
@@ -36,7 +39,11 @@ async function bootstrap() {
     .addBearerAuth()
     .build();
 
-  SwaggerModule.setup("docs", app, SwaggerModule.createDocument(app, swaggerConfig));
+  SwaggerModule.setup(
+    "docs",
+    app,
+    SwaggerModule.createDocument(app, swaggerConfig),
+  );
 
   await app.listen(config.get<number>("PORT") ?? 4000);
 }
