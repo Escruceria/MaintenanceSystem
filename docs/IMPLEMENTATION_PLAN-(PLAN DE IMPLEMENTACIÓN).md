@@ -277,6 +277,8 @@ Entregables:
 - Registrar notas finales y recomendaciones de ejecucion. Estado: implementado.
 - Registrar evidencias de mantenimiento como observaciones, fotos o documentos. Estado: implementado.
 - Subir archivos reales como evidencias de ordenes. Estado: implementado.
+- Descargar archivos de evidencias locales. Estado: implementado.
+- Anular evidencias con trazabilidad y auditoria. Estado: implementado.
 - Cerrar orden. Estado: implementado.
 - Auditar cambios operativos de ordenes. Estado: implementado.
 
@@ -298,9 +300,14 @@ Reglas implementadas:
 - La API publica archivos cargados bajo `/uploads/...`.
 - La carga real acepta imagenes `jpg`, `png`, `webp`, documentos `pdf`, Word y Excel, con limite de 10 MB.
 - Las evidencias conservan tipo, titulo, descripcion, archivo relacionado, usuario que registra y fecha.
+- La descarga de evidencias locales registra evento de auditoria `WORK_ORDER_EVIDENCE_DOWNLOADED`.
+- La anulacion de evidencias conserva el registro en base de datos con usuario, fecha y motivo.
+- La anulacion de evidencias locales intenta retirar el archivo fisico del almacenamiento.
+- Las evidencias anuladas no se pueden descargar.
 - No se registran notas ni evidencias sobre ordenes canceladas.
 - Las acciones operativas sensibles generan eventos de auditoria con actor, accion, entidad, id y metadatos.
 - La carga real de archivos genera evento de auditoria `WORK_ORDER_EVIDENCE_FILE_UPLOADED`.
+- La anulacion de evidencias genera evento de auditoria `WORK_ORDER_EVIDENCE_VOIDED`.
 
 Estados:
 

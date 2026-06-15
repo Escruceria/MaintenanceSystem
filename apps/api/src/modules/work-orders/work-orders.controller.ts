@@ -2,11 +2,14 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Patch,
   Post,
   Put,
+  Res,
+  StreamableFile,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -17,7 +20,9 @@ import { ApiBearerAuth, ApiBody, ApiConsumes, ApiTags } from "@nestjs/swagger";
 import { WorkOrderEvidenceType } from "@prisma/client";
 import { randomUUID } from "node:crypto";
 import { mkdirSync } from "node:fs";
+import { createReadStream } from "node:fs";
 import { extname, join } from "node:path";
+import type { Response } from "express";
 import { diskStorage } from "multer";
 import { CurrentUser } from "../auth/decorators/current-user.decorator";
 import { Permissions } from "../auth/decorators/permissions.decorator";
@@ -34,6 +39,7 @@ import { UpdateWorkOrderChecklistItemDto } from "./dto/update-work-order-checkli
 import { UpdateWorkOrderExecutionNotesDto } from "./dto/update-work-order-execution-notes.dto";
 import { UpdateWorkOrderDto } from "./dto/update-work-order.dto";
 import { UploadWorkOrderEvidenceDto } from "./dto/upload-work-order-evidence.dto";
+import { VoidWorkOrderEvidenceDto } from "./dto/void-work-order-evidence.dto";
 import { WorkOrdersService } from "./work-orders.service";
 
 const allowedEvidenceMimeTypes = new Set([
@@ -190,6 +196,26 @@ export class WorkOrdersController {
     return this.workOrders.getEvidences(id);
   }
 
+  @Permissions("work-orders:read")
+  @Get(":id/evidences/:evidenceId/download")
+  async downloadEvidence(
+    @Param("id") id: string,
+    @Param("evidenceId") evidenceId: string,
+    @CurrentUser() user: AuthenticatedUser,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const file = await this.workOrders.downloadEvidence(id, evidenceId, user);
+
+    response.setHeader("Content-Type", file.mimeType);
+    response.setHeader(
+      "Content-Disposition",
+      `attachment; filename="${file.fileName}"`,
+    );
+    response.setHeader("Content-Length", file.size);
+
+    return new StreamableFile(createReadStream(file.path));
+  }
+
   @Permissions("work-orders:write")
   @Post(":id/evidences")
   addEvidence(
@@ -234,6 +260,17 @@ export class WorkOrdersController {
     return this.workOrders.uploadEvidence(id, dto, file, user, {
       publicBaseUrl: this.config.get<string>("UPLOAD_PUBLIC_BASE_URL"),
     });
+  }
+
+  @Permissions("work-orders:write")
+  @Delete(":id/evidences/:evidenceId")
+  voidEvidence(
+    @Param("id") id: string,
+    @Param("evidenceId") evidenceId: string,
+    @Body() dto: VoidWorkOrderEvidenceDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.workOrders.voidEvidence(id, evidenceId, dto, user);
   }
 
   @Permissions("work-orders:close")

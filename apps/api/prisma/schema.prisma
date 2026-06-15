@@ -96,6 +96,7 @@ model User {
   assignedOrders      WorkOrder[]              @relation("AssignedTechnician")
   checklistExecutions WorkOrderChecklistItem[] @relation("ChecklistExecutor")
   workOrderEvidences  WorkOrderEvidence[]      @relation("EvidenceUploader")
+  voidedEvidences     WorkOrderEvidence[]      @relation("EvidenceVoider")
   requestedItems      ServiceRequest[]
   auditEvents         AuditEvent[]
   createdAt           DateTime                 @default(now())
@@ -320,12 +321,18 @@ model WorkOrderEvidence {
   mimeType     String?
   uploadedById String
   uploadedBy   User                  @relation("EvidenceUploader", fields: [uploadedById], references: [id])
+  voidedAt     DateTime?
+  voidedById   String?
+  voidedBy     User?                 @relation("EvidenceVoider", fields: [voidedById], references: [id])
+  voidReason   String?
   createdAt    DateTime              @default(now())
   updatedAt    DateTime              @updatedAt
 
   @@index([workOrderId])
   @@index([type])
   @@index([uploadedById])
+  @@index([voidedAt])
+  @@index([voidedById])
 }
 
 model MaintenancePlanAsset {

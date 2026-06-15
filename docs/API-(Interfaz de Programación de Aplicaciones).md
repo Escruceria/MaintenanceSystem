@@ -441,6 +441,23 @@ curl.exe -X POST http://localhost:4000/api/work-orders/<workOrderId>/evidences/u
   -F "description=Estado final del activo"
 ```
 
+Descargar archivo de evidencia:
+
+```powershell
+curl.exe -L http://localhost:4000/api/work-orders/<workOrderId>/evidences/<evidenceId>/download `
+  -H "Authorization: Bearer <accessToken>" `
+  -o evidencia-descargada.pdf
+```
+
+Anular evidencia:
+
+```powershell
+curl.exe -X DELETE http://localhost:4000/api/work-orders/<workOrderId>/evidences/<evidenceId> `
+  -H "Content-Type: application/json" `
+  -H "Authorization: Bearer <accessToken>" `
+  -d "{\"reason\":\"Evidencia cargada por error\"}"
+```
+
 Cancelar orden:
 
 ```powershell
@@ -468,6 +485,12 @@ Reglas:
 - Los archivos se exponen de forma estatica bajo `/uploads/...`.
 - La carga real permite imagenes `jpg`, `png`, `webp`, documentos `pdf`, Word y Excel, con tamano maximo de 10 MB.
 - La carga de archivos genera auditoria con accion `WORK_ORDER_EVIDENCE_FILE_UPLOADED`.
+- La descarga directa solo aplica para archivos almacenados localmente bajo `/uploads/...`.
+- Cada descarga de archivo genera auditoria con accion `WORK_ORDER_EVIDENCE_DOWNLOADED`.
+- La anulacion de evidencias conserva el registro historico con `voidedAt`, `voidedBy` y `voidReason`.
+- Si la evidencia anulada tiene archivo local, la API intenta retirar el archivo fisico del almacenamiento.
+- Una evidencia anulada no queda disponible para descarga.
+- La anulacion genera auditoria con accion `WORK_ORDER_EVIDENCE_VOIDED`.
 - Las evidencias conservan usuario que las registro y fecha de creacion.
 - No se pueden agregar evidencias ni notas sobre ordenes canceladas.
 
@@ -823,8 +846,10 @@ Eventos automaticos iniciales:
 - `PATCH /api/work-orders/:id/checklist/:itemId`
 - `PATCH /api/work-orders/:id/execution-notes`
 - `GET /api/work-orders/:id/evidences`
+- `GET /api/work-orders/:id/evidences/:evidenceId/download`
 - `POST /api/work-orders/:id/evidences`
 - `POST /api/work-orders/:id/evidences/upload`
+- `DELETE /api/work-orders/:id/evidences/:evidenceId`
 - `PATCH /api/work-orders/:id/close`
 - `PATCH /api/work-orders/:id/cancel`
 - `POST /api/maintenance-plans`

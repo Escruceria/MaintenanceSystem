@@ -47,6 +47,11 @@ maintenance_system
 - `Supplier`
 - `AuditEvent`
 
+Notas recientes:
+
+- `WorkOrderEvidence` conserva anulaciones mediante `voidedAt`, `voidedById` y `voidReason`.
+- La anulacion de evidencias es logica para mantener trazabilidad; si existe archivo local, la API intenta eliminar el archivo fisico.
+
 ## Crear migracion en desarrollo
 
 ```powershell
@@ -85,4 +90,3 @@ docker compose exec api sh -c "cd apps/api && npm run db:seed"
 - Todo cambio estructural debe quedar como migracion Prisma.
 - No subir passwords reales en `.env`.
 - `pws_bd.txt` es local y esta ignorado por Git.
-

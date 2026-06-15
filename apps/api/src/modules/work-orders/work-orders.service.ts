@@ -4,6 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import {
   AssetStatus,
   Prisma,
@@ -12,7 +13,8 @@ import {
   WorkOrderEvidenceType,
   WorkOrderStatus,
 } from "@prisma/client";
-import { unlink } from "node:fs/promises";
+import { stat, unlink } from "node:fs/promises";
+import { resolve, sep } from "node:path";
 import { AuditService } from "../audit/audit.service";
 import { AuthenticatedUser } from "../auth/types/authenticated-user";
 import { PrismaService } from "../prisma/prisma.service";
@@ -26,6 +28,7 @@ import { UpdateWorkOrderChecklistItemDto } from "./dto/update-work-order-checkli
 import { UpdateWorkOrderExecutionNotesDto } from "./dto/update-work-order-execution-notes.dto";
 import { UpdateWorkOrderDto } from "./dto/update-work-order.dto";
 import { UploadWorkOrderEvidenceDto } from "./dto/upload-work-order-evidence.dto";
+import { VoidWorkOrderEvidenceDto } from "./dto/void-work-order-evidence.dto";
 import { WorkOrderPartDto } from "./dto/work-order-part.dto";
 
 const workOrderSelect = Prisma.validator<Prisma.WorkOrderSelect>()({
@@ -144,6 +147,7 @@ export class WorkOrdersService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
+    private readonly config: ConfigService,
   ) {}
 
   async create(dto: CreateWorkOrderDto, actor?: AuthenticatedUser) {
@@ -557,10 +561,92 @@ export class WorkOrdersService {
             name: true,
           },
         },
+        voidedAt: true,
+        voidedBy: {
+          select: {
+            id: true,
+            email: true,
+            name: true,
+          },
+        },
+        voidReason: true,
         createdAt: true,
         updatedAt: true,
       },
     });
+  }
+
+  async downloadEvidence(
+    id: string,
+    evidenceId: string,
+    user: AuthenticatedUser,
+  ) {
+    await this.ensureWorkOrderExists(id);
+
+    const evidence = await this.prisma.workOrderEvidence.findFirst({
+      where: { id: evidenceId, workOrderId: id },
+      select: {
+        id: true,
+        type: true,
+        title: true,
+        fileUrl: true,
+        fileName: true,
+        mimeType: true,
+        voidedAt: true,
+      },
+    });
+
+    if (!evidence) {
+      throw new NotFoundException("Evidencia no encontrada");
+    }
+
+    if (evidence.voidedAt) {
+      throw new BadRequestException(
+        "La evidencia anulada no esta disponible para descarga",
+      );
+    }
+
+    if (!evidence.fileUrl) {
+      throw new BadRequestException("La evidencia no tiene archivo asociado");
+    }
+
+    const localPath = this.resolveLocalEvidencePath(evidence.fileUrl);
+
+    if (!localPath) {
+      throw new BadRequestException(
+        "La descarga directa solo esta disponible para archivos locales",
+      );
+    }
+
+    let fileStats: Awaited<ReturnType<typeof stat>>;
+
+    try {
+      fileStats = await stat(localPath);
+    } catch {
+      throw new NotFoundException("Archivo de evidencia no encontrado");
+    }
+
+    await this.audit.record({
+      actor: user,
+      action: "WORK_ORDER_EVIDENCE_DOWNLOADED",
+      entityType: "WorkOrderEvidence",
+      entityId: evidence.id,
+      metadata: {
+        workOrderId: id,
+        type: evidence.type,
+        title: evidence.title,
+        fileName: evidence.fileName,
+        mimeType: evidence.mimeType,
+        fileUrl: evidence.fileUrl,
+      },
+    });
+
+    return {
+      path: localPath,
+      fileName: evidence.fileName ?? `${evidence.id}.bin`,
+      mimeType: evidence.mimeType ?? "application/octet-stream",
+      size: fileStats.size,
+    };
   }
 
   async addEvidence(
@@ -605,6 +691,15 @@ export class WorkOrdersService {
             name: true,
           },
         },
+        voidedAt: true,
+        voidedBy: {
+          select: {
+            id: true,
+            email: true,
+            name: true,
+          },
+        },
+        voidReason: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -675,6 +770,15 @@ export class WorkOrdersService {
               name: true,
             },
           },
+          voidedAt: true,
+          voidedBy: {
+            select: {
+              id: true,
+              email: true,
+              name: true,
+            },
+          },
+          voidReason: true,
           createdAt: true,
           updatedAt: true,
         },
@@ -701,6 +805,96 @@ export class WorkOrdersService {
       await this.removeUploadedFile(file.path);
       throw error;
     }
+  }
+
+  async voidEvidence(
+    id: string,
+    evidenceId: string,
+    dto: VoidWorkOrderEvidenceDto,
+    user: AuthenticatedUser,
+  ) {
+    await this.ensureWorkOrderExists(id);
+
+    const current = await this.prisma.workOrderEvidence.findFirst({
+      where: { id: evidenceId, workOrderId: id },
+      select: {
+        id: true,
+        type: true,
+        title: true,
+        fileUrl: true,
+        fileName: true,
+        mimeType: true,
+        voidedAt: true,
+      },
+    });
+
+    if (!current) {
+      throw new NotFoundException("Evidencia no encontrada");
+    }
+
+    if (current.voidedAt) {
+      throw new ConflictException("La evidencia ya fue anulada");
+    }
+
+    const localPath = current.fileUrl
+      ? this.resolveLocalEvidencePath(current.fileUrl)
+      : null;
+    const fileRemoved = localPath ? await this.removeUploadedFile(localPath) : false;
+
+    const evidence = await this.prisma.workOrderEvidence.update({
+      where: { id: evidenceId },
+      data: {
+        voidedAt: new Date(),
+        voidedById: user.sub,
+        voidReason: this.normalizeOptionalText(dto?.reason),
+      },
+      select: {
+        id: true,
+        type: true,
+        title: true,
+        description: true,
+        fileUrl: true,
+        fileName: true,
+        mimeType: true,
+        uploadedBy: {
+          select: {
+            id: true,
+            email: true,
+            name: true,
+          },
+        },
+        voidedAt: true,
+        voidedBy: {
+          select: {
+            id: true,
+            email: true,
+            name: true,
+          },
+        },
+        voidReason: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+
+    await this.audit.record({
+      actor: user,
+      action: "WORK_ORDER_EVIDENCE_VOIDED",
+      entityType: "WorkOrderEvidence",
+      entityId: evidence.id,
+      metadata: {
+        workOrderId: id,
+        type: current.type,
+        title: current.title,
+        fileName: current.fileName,
+        mimeType: current.mimeType,
+        fileUrl: current.fileUrl,
+        fileRemoved,
+        reason: evidence.voidReason,
+      },
+    });
+
+    return evidence;
   }
 
   async close(id: string, dto: CloseWorkOrderDto, actor?: AuthenticatedUser) {
@@ -1011,8 +1205,37 @@ export class WorkOrdersService {
   private async removeUploadedFile(path: string) {
     try {
       await unlink(path);
+      return true;
     } catch {
-      return;
+      return false;
+    }
+  }
+
+  private resolveLocalEvidencePath(fileUrl: string) {
+    const pathname = this.extractFilePathname(fileUrl);
+
+    if (!pathname.startsWith("/uploads/")) {
+      return null;
+    }
+
+    const uploadRoot = resolve(
+      this.config.get<string>("UPLOAD_ROOT") ?? "storage",
+    );
+    const relativePath = pathname.replace(/^\/uploads\//, "");
+    const targetPath = resolve(uploadRoot, relativePath);
+
+    if (targetPath === uploadRoot || !targetPath.startsWith(`${uploadRoot}${sep}`)) {
+      throw new BadRequestException("Ruta de evidencia no permitida");
+    }
+
+    return targetPath;
+  }
+
+  private extractFilePathname(fileUrl: string) {
+    try {
+      return new URL(fileUrl).pathname;
+    } catch {
+      return fileUrl;
     }
   }
 
