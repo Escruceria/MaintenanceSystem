@@ -5,6 +5,8 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { AssetStatus, MaintenanceType, Prisma } from "@prisma/client";
+import { AuditService } from "../audit/audit.service";
+import { AuthenticatedUser } from "../auth/types/authenticated-user";
 import { PrismaService } from "../prisma/prisma.service";
 import { CreateAssetDto } from "./dto/create-asset.dto";
 import { UpdateAssetDto } from "./dto/update-asset.dto";
@@ -157,9 +159,12 @@ type AssetHistoryWithRelations = Prisma.AssetGetPayload<{
 
 @Injectable()
 export class AssetsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly audit: AuditService,
+  ) {}
 
-  async create(dto: CreateAssetDto) {
+  async create(dto: CreateAssetDto, actor?: AuthenticatedUser) {
     const code = this.normalizeCode(dto.code);
     const qrCode =
       this.normalizeQrCode(dto.qrCode) ?? this.generateQrCode(code);
@@ -184,6 +189,19 @@ export class AssetsService {
         locationId: dto.locationId,
       },
       select: assetSelect,
+    });
+
+    await this.audit.record({
+      actor,
+      action: "ASSET_CREATED",
+      entityType: "Asset",
+      entityId: asset.id,
+      metadata: {
+        code: asset.code,
+        name: asset.name,
+        status: asset.status,
+        locationId: asset.locationId,
+      },
     });
 
     return this.toAssetResponse(asset);
@@ -224,8 +242,8 @@ export class AssetsService {
     return this.toAssetHistoryResponse(asset);
   }
 
-  async update(id: string, dto: UpdateAssetDto) {
-    await this.ensureAssetExists(id);
+  async update(id: string, dto: UpdateAssetDto, actor?: AuthenticatedUser) {
+    const previous = await this.getAuditSnapshot(id);
 
     if (dto.code) {
       await this.ensureCodeIsAvailable(this.normalizeCode(dto.code), id);
@@ -270,11 +288,22 @@ export class AssetsService {
       select: assetSelect,
     });
 
+    await this.audit.record({
+      actor,
+      action: "ASSET_UPDATED",
+      entityType: "Asset",
+      entityId: asset.id,
+      metadata: {
+        before: previous,
+        after: this.toAuditSnapshot(asset),
+      },
+    });
+
     return this.toAssetResponse(asset);
   }
 
-  async activate(id: string) {
-    await this.ensureAssetExists(id);
+  async activate(id: string, actor?: AuthenticatedUser) {
+    const previous = await this.getAuditSnapshot(id);
 
     const asset = await this.prisma.asset.update({
       where: { id },
@@ -282,11 +311,22 @@ export class AssetsService {
       select: assetSelect,
     });
 
+    await this.audit.record({
+      actor,
+      action: "ASSET_ACTIVATED",
+      entityType: "Asset",
+      entityId: asset.id,
+      metadata: {
+        before: previous,
+        after: this.toAuditSnapshot(asset),
+      },
+    });
+
     return this.toAssetResponse(asset);
   }
 
-  async retire(id: string) {
-    await this.ensureAssetExists(id);
+  async retire(id: string, actor?: AuthenticatedUser) {
+    const previous = await this.getAuditSnapshot(id);
 
     const asset = await this.prisma.asset.update({
       where: { id },
@@ -294,14 +334,28 @@ export class AssetsService {
       select: assetSelect,
     });
 
+    await this.audit.record({
+      actor,
+      action: "ASSET_RETIRED",
+      entityType: "Asset",
+      entityId: asset.id,
+      metadata: {
+        before: previous,
+        after: this.toAuditSnapshot(asset),
+      },
+    });
+
     return this.toAssetResponse(asset);
   }
 
-  async remove(id: string) {
+  async remove(id: string, actor?: AuthenticatedUser) {
     const asset = await this.prisma.asset.findUnique({
       where: { id },
       select: {
         id: true,
+        code: true,
+        name: true,
+        status: true,
         _count: {
           select: {
             workOrders: true,
@@ -323,6 +377,18 @@ export class AssetsService {
 
     await this.prisma.asset.delete({ where: { id } });
 
+    await this.audit.record({
+      actor,
+      action: "ASSET_DELETED",
+      entityType: "Asset",
+      entityId: id,
+      metadata: {
+        code: asset.code,
+        name: asset.name,
+        status: asset.status,
+      },
+    });
+
     return { success: true };
   }
 
@@ -335,6 +401,29 @@ export class AssetsService {
     if (!asset) {
       throw new NotFoundException("Activo no encontrado");
     }
+  }
+
+  private async getAuditSnapshot(id: string) {
+    const asset = await this.prisma.asset.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        code: true,
+        name: true,
+        status: true,
+        locationId: true,
+        serialNumber: true,
+        brand: true,
+        model: true,
+        qrCode: true,
+      },
+    });
+
+    if (!asset) {
+      throw new NotFoundException("Activo no encontrado");
+    }
+
+    return asset;
   }
 
   private async ensureLocationExists(id: string) {
@@ -410,6 +499,20 @@ export class AssetsService {
       requestsCount: asset._count.requests,
       createdAt: asset.createdAt,
       updatedAt: asset.updatedAt,
+    };
+  }
+
+  private toAuditSnapshot(asset: AssetWithRelations) {
+    return {
+      id: asset.id,
+      code: asset.code,
+      name: asset.name,
+      status: asset.status,
+      locationId: asset.locationId,
+      serialNumber: asset.serialNumber,
+      brand: asset.brand,
+      model: asset.model,
+      qrCode: asset.qrCode,
     };
   }
 

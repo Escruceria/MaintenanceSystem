@@ -277,7 +277,7 @@ Entregables:
 - Registrar notas finales y recomendaciones de ejecucion. Estado: implementado.
 - Registrar evidencias de mantenimiento como observaciones, fotos o documentos. Estado: implementado.
 - Cerrar orden. Estado: implementado.
-- Auditar cambios.
+- Auditar cambios operativos de ordenes. Estado: implementado.
 
 Reglas implementadas:
 
@@ -294,6 +294,7 @@ Reglas implementadas:
 - Las evidencias `PHOTO` y `DOCUMENT` requieren referencia de archivo mediante `fileUrl`.
 - Las evidencias conservan tipo, titulo, descripcion, archivo relacionado, usuario que registra y fecha.
 - No se registran notas ni evidencias sobre ordenes canceladas.
+- Las acciones operativas sensibles generan eventos de auditoria con actor, accion, entidad, id y metadatos.
 
 Estados:
 
@@ -421,7 +422,7 @@ Entregables:
 - Backups.
 - Rate limit.
 - Logs estructurados.
-- Auditoria completa.
+- Auditoria completa. Estado: implementado inicialmente para activos, ordenes e inventario.
 - CI/CD.
 - Estrategia de despliegue.
 - Politica de seguridad.

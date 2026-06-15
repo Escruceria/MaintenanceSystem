@@ -12,6 +12,7 @@ import {
   WorkOrderEvidenceType,
   WorkOrderStatus,
 } from "@prisma/client";
+import { AuditService } from "../audit/audit.service";
 import { AuthenticatedUser } from "../auth/types/authenticated-user";
 import { PrismaService } from "../prisma/prisma.service";
 import { AssignWorkOrderDto } from "./dto/assign-work-order.dto";
@@ -138,9 +139,12 @@ const terminalStatuses = new Set<WorkOrderStatus>([
 
 @Injectable()
 export class WorkOrdersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly audit: AuditService,
+  ) {}
 
-  async create(dto: CreateWorkOrderDto) {
+  async create(dto: CreateWorkOrderDto, actor?: AuthenticatedUser) {
     await this.ensureAssetExists(dto.assetId);
 
     if (dto.assignedTechnicianId) {
@@ -179,6 +183,21 @@ export class WorkOrdersService {
       });
     });
 
+    await this.audit.record({
+      actor,
+      action: "WORK_ORDER_CREATED",
+      entityType: "WorkOrder",
+      entityId: workOrder!.id,
+      metadata: {
+        number: workOrder!.number,
+        status: workOrder!.status,
+        type: workOrder!.type,
+        priority: workOrder!.priority,
+        assetId: workOrder!.assetId,
+        assignedTechnicianId: workOrder!.assignedTechnicianId,
+      },
+    });
+
     return this.toWorkOrderResponse(workOrder!);
   }
 
@@ -204,7 +223,7 @@ export class WorkOrdersService {
     return this.toWorkOrderResponse(workOrder);
   }
 
-  async update(id: string, dto: UpdateWorkOrderDto) {
+  async update(id: string, dto: UpdateWorkOrderDto, actor?: AuthenticatedUser) {
     const current = await this.ensureWorkOrderExists(id);
     this.ensureNotTerminal(current.status);
 
@@ -250,10 +269,28 @@ export class WorkOrdersService {
       select: workOrderSelect,
     });
 
+    await this.audit.record({
+      actor,
+      action: "WORK_ORDER_UPDATED",
+      entityType: "WorkOrder",
+      entityId: workOrder.id,
+      metadata: {
+        number: workOrder.number,
+        before: this.toWorkOrderAuditState(current),
+        after: {
+          status: workOrder.status,
+          assetId: workOrder.assetId,
+          assignedTechnicianId: workOrder.assignedTechnicianId,
+          priority: workOrder.priority,
+          scheduledAt: workOrder.scheduledAt?.toISOString() ?? null,
+        },
+      },
+    });
+
     return this.toWorkOrderResponse(workOrder);
   }
 
-  async assign(id: string, dto: AssignWorkOrderDto) {
+  async assign(id: string, dto: AssignWorkOrderDto, actor?: AuthenticatedUser) {
     const current = await this.ensureWorkOrderExists(id);
     this.ensureNotTerminal(current.status);
     await this.ensureTechnicianExists(dto.technicianId);
@@ -267,10 +304,26 @@ export class WorkOrdersService {
       select: workOrderSelect,
     });
 
+    await this.audit.record({
+      actor,
+      action: "WORK_ORDER_ASSIGNED",
+      entityType: "WorkOrder",
+      entityId: workOrder.id,
+      metadata: {
+        number: workOrder.number,
+        technicianId: dto.technicianId,
+        status: workOrder.status,
+      },
+    });
+
     return this.toWorkOrderResponse(workOrder);
   }
 
-  async changeStatus(id: string, dto: ChangeWorkOrderStatusDto) {
+  async changeStatus(
+    id: string,
+    dto: ChangeWorkOrderStatusDto,
+    actor?: AuthenticatedUser,
+  ) {
     const current = await this.ensureWorkOrderExists(id);
     this.validateStatusChange(current.status, dto.status);
 
@@ -290,10 +343,28 @@ export class WorkOrdersService {
       select: workOrderSelect,
     });
 
+    await this.audit.record({
+      actor,
+      action: "WORK_ORDER_STATUS_CHANGED",
+      entityType: "WorkOrder",
+      entityId: workOrder.id,
+      metadata: {
+        number: workOrder.number,
+        previousStatus: current.status,
+        nextStatus: workOrder.status,
+        startedAt: workOrder.startedAt?.toISOString() ?? null,
+        completedAt: workOrder.completedAt?.toISOString() ?? null,
+      },
+    });
+
     return this.toWorkOrderResponse(workOrder);
   }
 
-  async setSpareParts(id: string, dto: SetWorkOrderPartsDto) {
+  async setSpareParts(
+    id: string,
+    dto: SetWorkOrderPartsDto,
+    actor?: AuthenticatedUser,
+  ) {
     const current = await this.ensureWorkOrderExists(id);
     this.ensureNotTerminal(current.status);
     await this.ensureSparePartsExist(dto.spareParts);
@@ -305,6 +376,21 @@ export class WorkOrdersService {
         where: { id },
         select: workOrderSelect,
       });
+    });
+
+    await this.audit.record({
+      actor,
+      action: "WORK_ORDER_SPARE_PARTS_SET",
+      entityType: "WorkOrder",
+      entityId: workOrder!.id,
+      metadata: {
+        number: workOrder!.number,
+        spareParts: workOrder!.spareParts.map((part) => ({
+          sparePartId: part.sparePart.id,
+          sku: part.sparePart.sku,
+          quantity: part.quantity,
+        })),
+      },
     });
 
     return this.toWorkOrderResponse(workOrder!);
@@ -394,12 +480,26 @@ export class WorkOrdersService {
       },
     });
 
+    await this.audit.record({
+      actor: user,
+      action: "WORK_ORDER_CHECKLIST_ITEM_UPDATED",
+      entityType: "WorkOrderChecklistItem",
+      entityId: updatedItem.id,
+      metadata: {
+        workOrderId: id,
+        status: updatedItem.status,
+        title: updatedItem.title,
+        executedAt: updatedItem.executedAt?.toISOString() ?? null,
+      },
+    });
+
     return updatedItem;
   }
 
   async updateExecutionNotes(
     id: string,
     dto: UpdateWorkOrderExecutionNotesDto,
+    actor?: AuthenticatedUser,
   ) {
     const current = await this.ensureWorkOrderExists(id);
     this.ensureNotCancelled(current.status);
@@ -417,6 +517,18 @@ export class WorkOrdersService {
             : this.normalizeOptionalText(dto.recommendations),
       },
       select: workOrderSelect,
+    });
+
+    await this.audit.record({
+      actor,
+      action: "WORK_ORDER_EXECUTION_NOTES_UPDATED",
+      entityType: "WorkOrder",
+      entityId: workOrder.id,
+      metadata: {
+        number: workOrder.number,
+        hasFinalNotes: Boolean(workOrder.finalNotes),
+        hasRecommendations: Boolean(workOrder.recommendations),
+      },
     });
 
     return this.toWorkOrderResponse(workOrder);
@@ -465,7 +577,7 @@ export class WorkOrdersService {
       );
     }
 
-    return this.prisma.workOrderEvidence.create({
+    const evidence = await this.prisma.workOrderEvidence.create({
       data: {
         workOrderId: id,
         type: dto.type,
@@ -495,9 +607,24 @@ export class WorkOrdersService {
         updatedAt: true,
       },
     });
+
+    await this.audit.record({
+      actor: user,
+      action: "WORK_ORDER_EVIDENCE_ADDED",
+      entityType: "WorkOrderEvidence",
+      entityId: evidence.id,
+      metadata: {
+        workOrderId: id,
+        type: evidence.type,
+        title: evidence.title,
+        fileName: evidence.fileName,
+      },
+    });
+
+    return evidence;
   }
 
-  async close(id: string, dto: CloseWorkOrderDto) {
+  async close(id: string, dto: CloseWorkOrderDto, actor?: AuthenticatedUser) {
     const current = await this.ensureWorkOrderExists(id);
     this.validateStatusChange(current.status, WorkOrderStatus.COMPLETED);
     await this.ensureRequiredChecklistCompleted(id);
@@ -561,10 +688,27 @@ export class WorkOrdersService {
       });
     });
 
+    await this.audit.record({
+      actor,
+      action: "WORK_ORDER_CLOSED",
+      entityType: "WorkOrder",
+      entityId: workOrder.id,
+      metadata: {
+        number: workOrder.number,
+        assetId: workOrder.assetId,
+        completedAt: workOrder.completedAt?.toISOString() ?? null,
+        spareParts: workOrder.spareParts.map((part) => ({
+          sparePartId: part.sparePart.id,
+          sku: part.sparePart.sku,
+          quantity: part.quantity,
+        })),
+      },
+    });
+
     return this.toWorkOrderResponse(workOrder);
   }
 
-  async cancel(id: string) {
+  async cancel(id: string, actor?: AuthenticatedUser) {
     const current = await this.ensureWorkOrderExists(id);
     this.ensureNotTerminal(current.status);
 
@@ -572,6 +716,18 @@ export class WorkOrdersService {
       where: { id },
       data: { status: WorkOrderStatus.CANCELLED },
       select: workOrderSelect,
+    });
+
+    await this.audit.record({
+      actor,
+      action: "WORK_ORDER_CANCELLED",
+      entityType: "WorkOrder",
+      entityId: workOrder.id,
+      metadata: {
+        number: workOrder.number,
+        previousStatus: current.status,
+        status: workOrder.status,
+      },
     });
 
     return this.toWorkOrderResponse(workOrder);
@@ -742,6 +898,20 @@ export class WorkOrdersService {
     const normalized = value?.trim();
 
     return normalized ? normalized : null;
+  }
+
+  private toWorkOrderAuditState(workOrder: {
+    id: string;
+    status: WorkOrderStatus;
+    startedAt: Date | null;
+    assetId: string;
+  }) {
+    return {
+      id: workOrder.id,
+      status: workOrder.status,
+      startedAt: workOrder.startedAt?.toISOString() ?? null,
+      assetId: workOrder.assetId,
+    };
   }
 
   private toWorkOrderResponse(workOrder: WorkOrderWithRelations) {

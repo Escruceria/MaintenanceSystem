@@ -9,9 +9,11 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
+import { CurrentUser } from "../auth/decorators/current-user.decorator";
 import { Permissions } from "../auth/decorators/permissions.decorator";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { PermissionsGuard } from "../auth/guards/permissions.guard";
+import { AuthenticatedUser } from "../auth/types/authenticated-user";
 import { AdjustStockDto } from "./dto/adjust-stock.dto";
 import { CreateSparePartDto } from "./dto/create-spare-part.dto";
 import { UpdateSparePartDto } from "./dto/update-spare-part.dto";
@@ -26,8 +28,11 @@ export class InventoryController {
 
   @Permissions("inventory:write")
   @Post("spare-parts")
-  createSparePart(@Body() dto: CreateSparePartDto) {
-    return this.inventory.createSparePart(dto);
+  createSparePart(
+    @Body() dto: CreateSparePartDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.inventory.createSparePart(dto, user);
   }
 
   @Permissions("inventory:read")
@@ -50,19 +55,30 @@ export class InventoryController {
 
   @Permissions("inventory:write")
   @Patch("spare-parts/:id")
-  updateSparePart(@Param("id") id: string, @Body() dto: UpdateSparePartDto) {
-    return this.inventory.updateSparePart(id, dto);
+  updateSparePart(
+    @Param("id") id: string,
+    @Body() dto: UpdateSparePartDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.inventory.updateSparePart(id, dto, user);
   }
 
   @Permissions("inventory:write")
   @Patch("spare-parts/:id/stock")
-  adjustStock(@Param("id") id: string, @Body() dto: AdjustStockDto) {
-    return this.inventory.adjustStock(id, dto);
+  adjustStock(
+    @Param("id") id: string,
+    @Body() dto: AdjustStockDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.inventory.adjustStock(id, dto, user);
   }
 
   @Permissions("inventory:write")
   @Delete("spare-parts/:id")
-  removeSparePart(@Param("id") id: string) {
-    return this.inventory.removeSparePart(id);
+  removeSparePart(
+    @Param("id") id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.inventory.removeSparePart(id, user);
   }
 }

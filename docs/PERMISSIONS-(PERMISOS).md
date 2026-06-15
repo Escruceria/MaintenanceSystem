@@ -106,7 +106,7 @@ Permisos principales:
 | `suppliers:write`         | Crear y actualizar proveedores                            |
 | `reports:read`            | Leer reportes e indicadores                               |
 | `reports:export`          | Exportar reportes                                         |
-| `audit:read`              | Leer auditoria del sistema                                |
+| `audit:read`              | Leer auditoria del sistema con filtros y paginacion       |
 | `settings:manage`         | Administrar configuracion del sistema                     |
 
 ## Endpoints protegidos actualmente
@@ -180,6 +180,8 @@ Permisos principales:
 | `GET /api/suppliers`                                   | `suppliers:read`                                |
 | `GET /api/reports/summary`                             | `reports:read`                                  |
 | `GET /api/audit`                                       | `audit:read`                                    |
+
+La ruta `GET /api/audit` permite filtrar por `actorId`, `action`, `entityType`, `entityId`, `from`, `to`, `page` y `limit`.
 
 ## Reglas de implementacion
 

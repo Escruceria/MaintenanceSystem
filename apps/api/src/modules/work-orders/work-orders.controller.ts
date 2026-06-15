@@ -34,8 +34,11 @@ export class WorkOrdersController {
 
   @Permissions("work-orders:write")
   @Post()
-  create(@Body() dto: CreateWorkOrderDto) {
-    return this.workOrders.create(dto);
+  create(
+    @Body() dto: CreateWorkOrderDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.workOrders.create(dto, user);
   }
 
   @Permissions("work-orders:read")
@@ -52,26 +55,42 @@ export class WorkOrdersController {
 
   @Permissions("work-orders:write")
   @Patch(":id")
-  update(@Param("id") id: string, @Body() dto: UpdateWorkOrderDto) {
-    return this.workOrders.update(id, dto);
+  update(
+    @Param("id") id: string,
+    @Body() dto: UpdateWorkOrderDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.workOrders.update(id, dto, user);
   }
 
   @Permissions("work-orders:assign")
   @Patch(":id/assign")
-  assign(@Param("id") id: string, @Body() dto: AssignWorkOrderDto) {
-    return this.workOrders.assign(id, dto);
+  assign(
+    @Param("id") id: string,
+    @Body() dto: AssignWorkOrderDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.workOrders.assign(id, dto, user);
   }
 
   @Permissions("work-orders:write")
   @Patch(":id/status")
-  changeStatus(@Param("id") id: string, @Body() dto: ChangeWorkOrderStatusDto) {
-    return this.workOrders.changeStatus(id, dto);
+  changeStatus(
+    @Param("id") id: string,
+    @Body() dto: ChangeWorkOrderStatusDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.workOrders.changeStatus(id, dto, user);
   }
 
   @Permissions("work-orders:write")
   @Put(":id/spare-parts")
-  setSpareParts(@Param("id") id: string, @Body() dto: SetWorkOrderPartsDto) {
-    return this.workOrders.setSpareParts(id, dto);
+  setSpareParts(
+    @Param("id") id: string,
+    @Body() dto: SetWorkOrderPartsDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.workOrders.setSpareParts(id, dto, user);
   }
 
   @Permissions("work-orders:read")
@@ -96,8 +115,9 @@ export class WorkOrdersController {
   updateExecutionNotes(
     @Param("id") id: string,
     @Body() dto: UpdateWorkOrderExecutionNotesDto,
+    @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.workOrders.updateExecutionNotes(id, dto);
+    return this.workOrders.updateExecutionNotes(id, dto, user);
   }
 
   @Permissions("work-orders:read")
@@ -118,13 +138,17 @@ export class WorkOrdersController {
 
   @Permissions("work-orders:close")
   @Patch(":id/close")
-  close(@Param("id") id: string, @Body() dto: CloseWorkOrderDto) {
-    return this.workOrders.close(id, dto);
+  close(
+    @Param("id") id: string,
+    @Body() dto: CloseWorkOrderDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.workOrders.close(id, dto, user);
   }
 
   @Permissions("work-orders:write")
   @Patch(":id/cancel")
-  cancel(@Param("id") id: string) {
-    return this.workOrders.cancel(id);
+  cancel(@Param("id") id: string, @CurrentUser() user: AuthenticatedUser) {
+    return this.workOrders.cancel(id, user);
   }
 }

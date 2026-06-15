@@ -5,6 +5,8 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { Prisma } from "@prisma/client";
+import { AuditService } from "../audit/audit.service";
+import { AuthenticatedUser } from "../auth/types/authenticated-user";
 import { PrismaService } from "../prisma/prisma.service";
 import { AdjustStockDto } from "./dto/adjust-stock.dto";
 import { CreateSparePartDto } from "./dto/create-spare-part.dto";
@@ -33,9 +35,12 @@ type SparePartWithUsage = Prisma.SparePartGetPayload<{
 
 @Injectable()
 export class InventoryService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly audit: AuditService,
+  ) {}
 
-  async createSparePart(dto: CreateSparePartDto) {
+  async createSparePart(dto: CreateSparePartDto, actor?: AuthenticatedUser) {
     const sku = this.normalizeSku(dto.sku);
     await this.ensureSkuIsAvailable(sku);
 
@@ -49,6 +54,19 @@ export class InventoryService {
         minimumStock: dto.minimumStock ?? 0,
       },
       select: sparePartSelect,
+    });
+
+    await this.audit.record({
+      actor,
+      action: "SPARE_PART_CREATED",
+      entityType: "SparePart",
+      entityId: sparePart.id,
+      metadata: {
+        sku: sparePart.sku,
+        name: sparePart.name,
+        stock: sparePart.stock,
+        minimumStock: sparePart.minimumStock,
+      },
     });
 
     return this.toSparePartResponse(sparePart);
@@ -90,8 +108,12 @@ export class InventoryService {
     return this.toSparePartResponse(sparePart);
   }
 
-  async updateSparePart(id: string, dto: UpdateSparePartDto) {
-    await this.ensureSparePartExists(id);
+  async updateSparePart(
+    id: string,
+    dto: UpdateSparePartDto,
+    actor?: AuthenticatedUser,
+  ) {
+    const previous = await this.getAuditSnapshot(id);
 
     if (dto.sku) {
       await this.ensureSkuIsAvailable(this.normalizeSku(dto.sku), id);
@@ -113,10 +135,25 @@ export class InventoryService {
       select: sparePartSelect,
     });
 
+    await this.audit.record({
+      actor,
+      action: "SPARE_PART_UPDATED",
+      entityType: "SparePart",
+      entityId: sparePart.id,
+      metadata: {
+        before: previous,
+        after: this.toSparePartAuditState(sparePart),
+      },
+    });
+
     return this.toSparePartResponse(sparePart);
   }
 
-  async adjustStock(id: string, dto: AdjustStockDto) {
+  async adjustStock(
+    id: string,
+    dto: AdjustStockDto,
+    actor?: AuthenticatedUser,
+  ) {
     const sparePart = await this.prisma.sparePart.findUnique({
       where: { id },
       select: { id: true, stock: true },
@@ -138,20 +175,40 @@ export class InventoryService {
       select: sparePartSelect,
     });
 
-    return {
+    const response = {
       ...this.toSparePartResponse(updated),
       adjustment: {
         quantity: dto.quantity,
         reason: dto.reason.trim(),
       },
     };
+
+    await this.audit.record({
+      actor,
+      action: "SPARE_PART_STOCK_ADJUSTED",
+      entityType: "SparePart",
+      entityId: updated.id,
+      metadata: {
+        sku: updated.sku,
+        previousStock: sparePart.stock,
+        quantity: dto.quantity,
+        nextStock,
+        reason: dto.reason.trim(),
+      },
+    });
+
+    return response;
   }
 
-  async removeSparePart(id: string) {
+  async removeSparePart(id: string, actor?: AuthenticatedUser) {
     const sparePart = await this.prisma.sparePart.findUnique({
       where: { id },
       select: {
         id: true,
+        sku: true,
+        name: true,
+        stock: true,
+        minimumStock: true,
         _count: {
           select: {
             workOrderUsages: true,
@@ -172,6 +229,19 @@ export class InventoryService {
 
     await this.prisma.sparePart.delete({ where: { id } });
 
+    await this.audit.record({
+      actor,
+      action: "SPARE_PART_DELETED",
+      entityType: "SparePart",
+      entityId: id,
+      metadata: {
+        sku: sparePart.sku,
+        name: sparePart.name,
+        stock: sparePart.stock,
+        minimumStock: sparePart.minimumStock,
+      },
+    });
+
     return { success: true };
   }
 
@@ -184,6 +254,26 @@ export class InventoryService {
     if (!sparePart) {
       throw new NotFoundException("Repuesto no encontrado");
     }
+  }
+
+  private async getAuditSnapshot(id: string) {
+    const sparePart = await this.prisma.sparePart.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        sku: true,
+        name: true,
+        unit: true,
+        stock: true,
+        minimumStock: true,
+      },
+    });
+
+    if (!sparePart) {
+      throw new NotFoundException("Repuesto no encontrado");
+    }
+
+    return sparePart;
   }
 
   private async ensureSkuIsAvailable(sku: string, currentSparePartId?: string) {
@@ -224,6 +314,17 @@ export class InventoryService {
       workOrderUsagesCount: sparePart._count.workOrderUsages,
       createdAt: sparePart.createdAt,
       updatedAt: sparePart.updatedAt,
+    };
+  }
+
+  private toSparePartAuditState(sparePart: SparePartWithUsage) {
+    return {
+      id: sparePart.id,
+      sku: sparePart.sku,
+      name: sparePart.name,
+      unit: sparePart.unit,
+      stock: sparePart.stock,
+      minimumStock: sparePart.minimumStock,
     };
   }
 }

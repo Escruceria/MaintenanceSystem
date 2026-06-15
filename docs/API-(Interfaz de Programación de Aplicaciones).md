@@ -739,6 +739,33 @@ Metricas calculadas:
 
 En Docker, el frontend usa `API_INTERNAL_URL=http://api:4000/api` para consultar la API desde la red interna de contenedores. Las variables `DASHBOARD_ADMIN_EMAIL` y `DASHBOARD_ADMIN_PASSWORD` solo son una ayuda de desarrollo para obtener un JWT y consumir el endpoint protegido. En produccion el dashboard debe usar la sesion real del usuario autenticado.
 
+## Auditoria y trazabilidad
+
+La auditoria registra eventos operativos sensibles con actor, accion, entidad, id de entidad, fecha y metadatos.
+
+Consultar auditoria:
+
+```powershell
+curl.exe "http://localhost:4000/api/audit?page=1&limit=50" -H "Authorization: Bearer <accessToken>"
+```
+
+Filtros disponibles:
+
+- `actorId`: usuario que ejecuto la accion.
+- `action`: accion auditada, por ejemplo `WORK_ORDER_CLOSED`.
+- `entityType`: entidad afectada, por ejemplo `WorkOrder`, `Asset` o `SparePart`.
+- `entityId`: id de la entidad afectada.
+- `from`: fecha inicial ISO.
+- `to`: fecha final ISO.
+- `page`: pagina, por defecto `1`.
+- `limit`: registros por pagina, maximo `100`.
+
+Eventos automaticos iniciales:
+
+- Activos: creacion, actualizacion, activacion, retiro y eliminacion.
+- Ordenes de trabajo: creacion, actualizacion, asignacion, cambio de estado, repuestos, checklist, notas de ejecucion, evidencias, cierre y cancelacion.
+- Inventario: creacion de repuesto, actualizacion, ajuste de stock y eliminacion.
+
 ## Rutas protegidas actuales
 
 - `POST /api/users`
