@@ -21,6 +21,14 @@ const assetSelect = Prisma.validator<Prisma.AssetSelect>()({
   model: true,
   qrCode: true,
   status: true,
+  supplierId: true,
+  supplier: {
+    select: {
+      id: true,
+      name: true,
+      taxId: true,
+    },
+  },
   locationId: true,
   location: {
     select: {
@@ -55,6 +63,13 @@ const assetHistorySelect = Prisma.validator<Prisma.AssetSelect>()({
   model: true,
   qrCode: true,
   status: true,
+  supplier: {
+    select: {
+      id: true,
+      name: true,
+      taxId: true,
+    },
+  },
   location: {
     select: {
       id: true,
@@ -176,6 +191,10 @@ export class AssetsService {
       await this.ensureLocationExists(dto.locationId);
     }
 
+    if (dto.supplierId) {
+      await this.ensureSupplierExists(dto.supplierId);
+    }
+
     const asset = await this.prisma.asset.create({
       data: {
         code,
@@ -186,6 +205,7 @@ export class AssetsService {
         model: this.normalizeOptionalText(dto.model),
         qrCode,
         status: dto.status ?? AssetStatus.ACTIVE,
+        supplierId: dto.supplierId,
         locationId: dto.locationId,
       },
       select: assetSelect,
@@ -200,6 +220,7 @@ export class AssetsService {
         code: asset.code,
         name: asset.name,
         status: asset.status,
+        supplierId: asset.supplierId,
         locationId: asset.locationId,
       },
     });
@@ -257,6 +278,10 @@ export class AssetsService {
       await this.ensureLocationExists(dto.locationId);
     }
 
+    if (dto.supplierId !== undefined && dto.supplierId !== null) {
+      await this.ensureSupplierExists(dto.supplierId);
+    }
+
     const asset = await this.prisma.asset.update({
       where: { id },
       data: {
@@ -283,6 +308,7 @@ export class AssetsService {
             ? undefined
             : this.normalizeQrCode(dto.qrCode),
         status: dto.status,
+        supplierId: dto.supplierId,
         locationId: dto.locationId,
       },
       select: assetSelect,
@@ -411,6 +437,7 @@ export class AssetsService {
         code: true,
         name: true,
         status: true,
+        supplierId: true,
         locationId: true,
         serialNumber: true,
         brand: true,
@@ -434,6 +461,21 @@ export class AssetsService {
 
     if (!location) {
       throw new NotFoundException("Ubicacion no encontrada");
+    }
+  }
+
+  private async ensureSupplierExists(id: string) {
+    const supplier = await this.prisma.supplier.findUnique({
+      where: { id },
+      select: { id: true, isActive: true },
+    });
+
+    if (!supplier) {
+      throw new NotFoundException("Proveedor no encontrado");
+    }
+
+    if (!supplier.isActive) {
+      throw new BadRequestException("El proveedor debe estar activo");
     }
   }
 
@@ -493,6 +535,8 @@ export class AssetsService {
       model: asset.model,
       qrCode: asset.qrCode,
       status: asset.status,
+      supplierId: asset.supplierId,
+      supplier: asset.supplier,
       locationId: asset.locationId,
       location: asset.location,
       workOrdersCount: asset._count.workOrders,
@@ -508,6 +552,7 @@ export class AssetsService {
       code: asset.code,
       name: asset.name,
       status: asset.status,
+      supplierId: asset.supplierId,
       locationId: asset.locationId,
       serialNumber: asset.serialNumber,
       brand: asset.brand,

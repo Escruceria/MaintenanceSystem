@@ -52,6 +52,12 @@ enum InventoryMovementType {
   WORK_ORDER_CONSUMPTION
 }
 
+enum WarrantyStatus {
+  ACTIVE
+  EXPIRED
+  CANCELLED
+}
+
 enum MaintenanceFrequency {
   DAILY
   WEEKLY
@@ -222,15 +228,19 @@ model Asset {
   model            String?
   qrCode           String?                @unique
   status           AssetStatus            @default(ACTIVE)
+  supplierId       String?
+  supplier         Supplier?              @relation("AssetSupplier", fields: [supplierId], references: [id])
   locationId       String?
   location         Location?              @relation(fields: [locationId], references: [id])
   workOrders       WorkOrder[]
   maintenancePlans MaintenancePlanAsset[]
   requests         ServiceRequest[]
+  warranties       AssetWarranty[]
   createdAt        DateTime               @default(now())
   updatedAt        DateTime               @updatedAt
 
   @@index([status])
+  @@index([supplierId])
   @@index([locationId])
   @@index([brand])
 }
@@ -441,13 +451,45 @@ model WorkOrderPart {
 }
 
 model Supplier {
-  id        String   @id @default(uuid())
-  name      String
-  taxId     String?  @unique
-  email     String?
-  phone     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            String          @id @default(uuid())
+  name          String
+  taxId         String?         @unique
+  contactName   String?
+  email         String?
+  phone         String?
+  address       String?
+  website       String?
+  notes         String?
+  isActive      Boolean         @default(true)
+  suppliedAssets Asset[]        @relation("AssetSupplier")
+  warranties    AssetWarranty[]
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  @@index([isActive])
+  @@index([name])
+}
+
+model AssetWarranty {
+  id          String         @id @default(uuid())
+  assetId     String
+  asset       Asset          @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  supplierId  String?
+  supplier    Supplier?      @relation(fields: [supplierId], references: [id])
+  title       String
+  description String?
+  policyNumber String?
+  startDate   DateTime
+  endDate     DateTime
+  status      WarrantyStatus @default(ACTIVE)
+  terms       String?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  @@index([assetId])
+  @@index([supplierId])
+  @@index([status])
+  @@index([endDate])
 }
 
 model AuditEvent {

@@ -46,6 +46,7 @@ maintenance_system
 - `InventoryMovement`
 - `WorkOrderPart`
 - `Supplier`
+- `AssetWarranty`
 - `AuditEvent`
 
 Notas recientes:
@@ -54,6 +55,8 @@ Notas recientes:
 - La anulacion de evidencias es logica para mantener trazabilidad; si existe archivo local, la API intenta eliminar el archivo fisico.
 - `ServiceRequest` maneja flujo operativo con `status`, `priority`, fechas de revision/aprobacion/rechazo/cierre/conversion y referencia opcional a `workOrderId`.
 - `InventoryMovement` registra Kardex de repuestos con tipo, cantidad, stock anterior, stock nuevo, motivo, referencia, orden relacionada y usuario que ejecuta el movimiento.
+- `Asset` puede tener `supplierId` como proveedor principal.
+- `AssetWarranty` registra garantias por activo, proveedor opcional, vigencia, poliza, estado y terminos.
 
 ## Crear migracion en desarrollo
 

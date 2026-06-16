@@ -240,7 +240,7 @@ Crear activo:
 curl.exe -X POST http://localhost:4000/api/assets `
   -H "Content-Type: application/json" `
   -H "Authorization: Bearer <accessToken>" `
-  -d "{\"code\":\"EQ-0001\",\"name\":\"Bomba centrifuga linea 2\",\"serialNumber\":\"SN-001\",\"brand\":\"Siemens\",\"model\":\"XPTO-500\",\"locationId\":\"<locationId>\"}"
+  -d "{\"code\":\"EQ-0001\",\"name\":\"Bomba centrifuga linea 2\",\"serialNumber\":\"SN-001\",\"brand\":\"Siemens\",\"model\":\"XPTO-500\",\"locationId\":\"<locationId>\",\"supplierId\":\"<supplierId>\"}"
 ```
 
 Si no se envia `qrCode`, la API genera uno con el formato `MS-ASSET:<CODE>`.
@@ -301,7 +301,8 @@ Reglas:
 - El codigo es unico y se normaliza en mayusculas.
 - El QR es unico. Si no se envia, se genera automaticamente desde el codigo.
 - La ubicacion debe existir cuando se asigna `locationId`.
-- Las respuestas incluyen la ubicacion resumida.
+- El proveedor debe existir y estar activo cuando se asigna `supplierId`.
+- Las respuestas incluyen la ubicacion y el proveedor resumidos.
 - No se puede eliminar un activo con ordenes o solicitudes asociadas.
 - Para conservar historia operativa, un activo con trazabilidad debe retirarse usando estado `RETIRED`.
 
@@ -578,6 +579,78 @@ Reglas:
 - Para convertir una solicitud debe existir un activo activo asociado, ya sea en la solicitud o en el cuerpo de conversion.
 - La conversion crea la orden y marca la solicitud como `CONVERTED` en una misma transaccion.
 - La conversion genera auditoria `SERVICE_REQUEST_CONVERTED` y tambien registra la creacion de orden `WORK_ORDER_CREATED`.
+
+## Proveedores y garantias
+
+Los proveedores permiten registrar contactos comerciales, asociarlos como proveedor principal de activos y controlar garantias por activo.
+
+Crear proveedor:
+
+```powershell
+curl.exe -X POST http://localhost:4000/api/suppliers `
+  -H "Content-Type: application/json" `
+  -H "Authorization: Bearer <accessToken>" `
+  -d "{\"name\":\"Proveedor Industrial S.A.S.\",\"taxId\":\"900123456-7\",\"contactName\":\"Laura Gomez\",\"email\":\"contacto@proveedor.com\",\"phone\":\"+57 300 000 0000\"}"
+```
+
+Listar proveedores:
+
+```powershell
+curl.exe http://localhost:4000/api/suppliers -H "Authorization: Bearer <accessToken>"
+```
+
+Actualizar proveedor:
+
+```powershell
+curl.exe -X PATCH http://localhost:4000/api/suppliers/<supplierId> `
+  -H "Content-Type: application/json" `
+  -H "Authorization: Bearer <accessToken>" `
+  -d "{\"phone\":\"+57 301 000 0000\",\"notes\":\"Proveedor autorizado\"}"
+```
+
+Activar o desactivar proveedor:
+
+```powershell
+curl.exe -X PATCH http://localhost:4000/api/suppliers/<supplierId>/activate -H "Authorization: Bearer <accessToken>"
+curl.exe -X PATCH http://localhost:4000/api/suppliers/<supplierId>/deactivate -H "Authorization: Bearer <accessToken>"
+```
+
+Crear garantia de activo:
+
+```powershell
+curl.exe -X POST http://localhost:4000/api/suppliers/warranties `
+  -H "Content-Type: application/json" `
+  -H "Authorization: Bearer <accessToken>" `
+  -d "{\"assetId\":\"<assetId>\",\"supplierId\":\"<supplierId>\",\"title\":\"Garantia de fabrica\",\"policyNumber\":\"POL-2026-0001\",\"startDate\":\"2026-01-01T00:00:00.000Z\",\"endDate\":\"2027-01-01T00:00:00.000Z\"}"
+```
+
+Consultar garantias:
+
+```powershell
+curl.exe http://localhost:4000/api/suppliers/warranties -H "Authorization: Bearer <accessToken>"
+curl.exe http://localhost:4000/api/suppliers/assets/<assetId>/warranties -H "Authorization: Bearer <accessToken>"
+curl.exe "http://localhost:4000/api/suppliers/warranties/expiring?days=30" -H "Authorization: Bearer <accessToken>"
+```
+
+Actualizar o cancelar garantia:
+
+```powershell
+curl.exe -X PATCH http://localhost:4000/api/suppliers/warranties/<warrantyId> `
+  -H "Content-Type: application/json" `
+  -H "Authorization: Bearer <accessToken>" `
+  -d "{\"status\":\"ACTIVE\",\"endDate\":\"2027-06-01T00:00:00.000Z\"}"
+
+curl.exe -X PATCH http://localhost:4000/api/suppliers/warranties/<warrantyId>/cancel -H "Authorization: Bearer <accessToken>"
+```
+
+Reglas:
+
+- El documento `taxId` del proveedor es unico cuando se registra.
+- Un proveedor desactivado no puede asignarse a nuevas garantias ni como proveedor principal de activo.
+- Una garantia debe tener fecha inicial menor o igual a la fecha final.
+- Las garantias pueden estar `ACTIVE`, `EXPIRED` o `CANCELLED`.
+- La consulta de vencimientos devuelve garantias activas que vencen dentro del rango solicitado.
+- La creacion, actualizacion y cancelacion de garantias generan eventos de auditoria.
 
 ## Inventario y repuestos
 
@@ -991,7 +1064,18 @@ Eventos automaticos iniciales:
 - `POST /api/inventory/spare-parts/:id/movements`
 - `GET /api/inventory/spare-parts/:id/movements`
 - `DELETE /api/inventory/spare-parts/:id`
+- `POST /api/suppliers`
 - `GET /api/suppliers`
+- `GET /api/suppliers/:id`
+- `PATCH /api/suppliers/:id`
+- `PATCH /api/suppliers/:id/activate`
+- `PATCH /api/suppliers/:id/deactivate`
+- `POST /api/suppliers/warranties`
+- `GET /api/suppliers/warranties`
+- `GET /api/suppliers/warranties/expiring`
+- `GET /api/suppliers/assets/:assetId/warranties`
+- `PATCH /api/suppliers/warranties/:id`
+- `PATCH /api/suppliers/warranties/:id/cancel`
 - `GET /api/reports/summary`
 - `GET /api/audit`
 

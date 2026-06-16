@@ -63,4 +63,9 @@ export class UpdateAssetDto {
   @IsOptional()
   @IsUUID()
   locationId?: string | null;
+
+  @ApiPropertyOptional({ nullable: true })
+  @IsOptional()
+  @IsUUID()
+  supplierId?: string | null;
 }

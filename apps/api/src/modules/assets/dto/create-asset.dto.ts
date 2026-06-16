@@ -61,4 +61,9 @@ export class CreateAssetDto {
   @IsOptional()
   @IsUUID()
   locationId?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsUUID()
+  supplierId?: string;
 }

@@ -375,6 +375,10 @@ Entregables:
 - Stock inicial como movimiento `INITIAL`. Estado: implementado.
 - Salida por orden de trabajo como movimiento `WORK_ORDER_CONSUMPTION`. Estado: implementado.
 - Proveedores.
+- CRUD de proveedores. Estado: implementado.
+- Asociar proveedor principal a activos. Estado: implementado.
+- Garantias por activo y proveedor. Estado: implementado.
+- Consulta de garantias proximas a vencer. Estado: implementado.
 - Costos.
 - Alertas de inventario por bajo stock. Estado: implementado como endpoint.
 
@@ -388,6 +392,14 @@ Reglas implementadas:
 - Los movimientos manuales permitidos son entrada, salida y ajuste.
 - Los consumos de ordenes generan movimiento automatico `WORK_ORDER_CONSUMPTION`.
 - Bloqueo de eliminacion cuando el repuesto ya fue usado en ordenes.
+
+Reglas de proveedores y garantias:
+
+- Documento tributario de proveedor unico cuando existe.
+- Proveedores inactivos no se pueden asociar a nuevos activos ni garantias.
+- Garantias con fecha inicial menor o igual a fecha final.
+- Garantias con estados `ACTIVE`, `EXPIRED` y `CANCELLED`.
+- Auditoria de creacion, actualizacion y cancelacion de garantias.
 
 ## Fase 8.1 - Solicitudes de servicio
 
