@@ -32,6 +32,7 @@ maintenance_system
 ## Modelos actuales
 
 - `User`
+- `UserInvitation`
 - `Role`
 - `Permission`
 - `UserRole`
@@ -40,7 +41,11 @@ maintenance_system
 - `Location`
 - `Asset`
 - `WorkOrder`
+- `MaintenancePlanTask`
+- `WorkOrderChecklistItem`
+- `WorkOrderEvidence`
 - `MaintenancePlan`
+- `MaintenancePlanAsset`
 - `ServiceRequest`
 - `SparePart`
 - `InventoryMovement`

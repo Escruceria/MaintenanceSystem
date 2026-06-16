@@ -56,7 +56,7 @@ npm run dev
 
 ## Ejecutar con Docker
 
-Ver `DOCKER_RUNBOOK.md` en la raiz del proyecto.
+Ver `DOCKER _RUNBOOK-(MANUAL DE EJECUCIÓN DE DOCKER).md` en la raiz del proyecto.
 
 Comando principal:
 
@@ -88,4 +88,3 @@ npm run build -w apps/web
 - `dist`
 - `archivo_historico`
 - `img`
-
