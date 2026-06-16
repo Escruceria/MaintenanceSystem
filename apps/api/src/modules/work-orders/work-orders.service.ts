@@ -7,6 +7,7 @@ import {
 import { ConfigService } from "@nestjs/config";
 import {
   AssetStatus,
+  InventoryMovementType,
   Prisma,
   UserStatus,
   WorkOrderChecklistItemStatus,
@@ -934,6 +935,20 @@ export class WorkOrdersService {
         await tx.sparePart.update({
           where: { id: part.sparePart.id },
           data: { stock: { decrement: part.quantity } },
+        });
+
+        await tx.inventoryMovement.create({
+          data: {
+            sparePartId: part.sparePart.id,
+            type: InventoryMovementType.WORK_ORDER_CONSUMPTION,
+            quantity: -part.quantity,
+            previousStock: part.sparePart.stock,
+            nextStock: part.sparePart.stock - part.quantity,
+            reason: "Consumo por cierre de orden de trabajo",
+            reference: current.id,
+            workOrderId: current.id,
+            createdById: actor?.sub,
+          },
         });
       }
 

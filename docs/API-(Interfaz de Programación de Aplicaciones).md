@@ -628,6 +628,21 @@ curl.exe -X PATCH http://localhost:4000/api/inventory/spare-parts/<sparePartId>/
   -d "{\"quantity\":5,\"reason\":\"Compra inicial\"}"
 ```
 
+Registrar movimiento de inventario:
+
+```powershell
+curl.exe -X POST http://localhost:4000/api/inventory/spare-parts/<sparePartId>/movements `
+  -H "Content-Type: application/json" `
+  -H "Authorization: Bearer <accessToken>" `
+  -d "{\"type\":\"IN\",\"quantity\":10,\"reason\":\"Compra de repuestos\",\"reference\":\"FACT-2026-0001\"}"
+```
+
+Consultar Kardex del repuesto:
+
+```powershell
+curl.exe http://localhost:4000/api/inventory/spare-parts/<sparePartId>/movements -H "Authorization: Bearer <accessToken>"
+```
+
 Eliminar repuesto:
 
 ```powershell
@@ -640,6 +655,12 @@ Reglas:
 - La unidad se normaliza en mayusculas.
 - El stock y el stock minimo no pueden ser negativos.
 - Los ajustes no pueden dejar el stock en negativo.
+- Cada movimiento conserva stock anterior, cantidad, stock nuevo, motivo, referencia, usuario y fecha.
+- Los movimientos manuales permitidos son `IN`, `OUT` y `ADJUSTMENT`.
+- Los movimientos `IN` deben sumar stock y los movimientos `OUT` deben descontar stock.
+- Los ajustes existentes por `/stock` se conservan por compatibilidad y ahora generan movimiento `ADJUSTMENT`.
+- Al crear un repuesto con stock inicial diferente de cero se genera movimiento `INITIAL`.
+- Al cerrar una orden con repuestos se genera movimiento `WORK_ORDER_CONSUMPTION` por cada repuesto consumido.
 - No se puede eliminar un repuesto usado en ordenes de trabajo.
 
 ## Planes de mantenimiento
@@ -967,6 +988,8 @@ Eventos automaticos iniciales:
 - `GET /api/inventory/spare-parts/:id`
 - `PATCH /api/inventory/spare-parts/:id`
 - `PATCH /api/inventory/spare-parts/:id/stock`
+- `POST /api/inventory/spare-parts/:id/movements`
+- `GET /api/inventory/spare-parts/:id/movements`
 - `DELETE /api/inventory/spare-parts/:id`
 - `GET /api/suppliers`
 - `GET /api/reports/summary`

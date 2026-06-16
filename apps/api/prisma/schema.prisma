@@ -44,6 +44,14 @@ enum MaintenanceType {
   INSPECTION
 }
 
+enum InventoryMovementType {
+  INITIAL
+  IN
+  OUT
+  ADJUSTMENT
+  WORK_ORDER_CONSUMPTION
+}
+
 enum MaintenanceFrequency {
   DAILY
   WEEKLY
@@ -107,6 +115,7 @@ model User {
   workOrderEvidences  WorkOrderEvidence[]      @relation("EvidenceUploader")
   voidedEvidences     WorkOrderEvidence[]      @relation("EvidenceVoider")
   requestedItems      ServiceRequest[]
+  inventoryMovements  InventoryMovement[]
   auditEvents         AuditEvent[]
   createdAt           DateTime                 @default(now())
   updatedAt           DateTime                 @updatedAt
@@ -249,6 +258,7 @@ model WorkOrder {
   checklistItems       WorkOrderChecklistItem[]
   evidences            WorkOrderEvidence[]
   serviceRequest       ServiceRequest?
+  inventoryMovements   InventoryMovement[]
   createdAt            DateTime                 @default(now())
   updatedAt            DateTime                 @updatedAt
 }
@@ -392,8 +402,32 @@ model SparePart {
   stock           Int             @default(0)
   minimumStock    Int             @default(0)
   workOrderUsages WorkOrderPart[]
+  movements       InventoryMovement[]
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
+}
+
+model InventoryMovement {
+  id            String                @id @default(uuid())
+  sparePartId   String
+  sparePart     SparePart             @relation(fields: [sparePartId], references: [id])
+  type          InventoryMovementType
+  quantity      Int
+  previousStock Int
+  nextStock     Int
+  reason        String
+  reference     String?
+  workOrderId   String?
+  workOrder     WorkOrder?            @relation(fields: [workOrderId], references: [id])
+  createdById   String?
+  createdBy     User?                 @relation(fields: [createdById], references: [id])
+  createdAt     DateTime              @default(now())
+
+  @@index([sparePartId])
+  @@index([type])
+  @@index([workOrderId])
+  @@index([createdById])
+  @@index([createdAt])
 }
 
 model WorkOrderPart {

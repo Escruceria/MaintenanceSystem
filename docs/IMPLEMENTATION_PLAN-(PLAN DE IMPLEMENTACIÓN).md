@@ -371,7 +371,9 @@ Entregables:
 - CRUD de repuestos. Estado: implementado.
 - Stock minimo. Estado: implementado.
 - Ajustes de stock. Estado: implementado.
-- Salida por orden de trabajo.
+- Movimientos de inventario y Kardex por repuesto. Estado: implementado.
+- Stock inicial como movimiento `INITIAL`. Estado: implementado.
+- Salida por orden de trabajo como movimiento `WORK_ORDER_CONSUMPTION`. Estado: implementado.
 - Proveedores.
 - Costos.
 - Alertas de inventario por bajo stock. Estado: implementado como endpoint.
@@ -382,6 +384,9 @@ Reglas implementadas:
 - Unidad normalizada en mayusculas.
 - Stock y stock minimo sin valores negativos.
 - Ajustes de stock sin permitir inventario negativo.
+- Todo movimiento conserva stock anterior, cantidad, stock nuevo, motivo, referencia, usuario y fecha.
+- Los movimientos manuales permitidos son entrada, salida y ajuste.
+- Los consumos de ordenes generan movimiento automatico `WORK_ORDER_CONSUMPTION`.
 - Bloqueo de eliminacion cuando el repuesto ya fue usado en ordenes.
 
 ## Fase 8.1 - Solicitudes de servicio

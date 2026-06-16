@@ -43,6 +43,7 @@ maintenance_system
 - `MaintenancePlan`
 - `ServiceRequest`
 - `SparePart`
+- `InventoryMovement`
 - `WorkOrderPart`
 - `Supplier`
 - `AuditEvent`
@@ -52,6 +53,7 @@ Notas recientes:
 - `WorkOrderEvidence` conserva anulaciones mediante `voidedAt`, `voidedById` y `voidReason`.
 - La anulacion de evidencias es logica para mantener trazabilidad; si existe archivo local, la API intenta eliminar el archivo fisico.
 - `ServiceRequest` maneja flujo operativo con `status`, `priority`, fechas de revision/aprobacion/rechazo/cierre/conversion y referencia opcional a `workOrderId`.
+- `InventoryMovement` registra Kardex de repuestos con tipo, cantidad, stock anterior, stock nuevo, motivo, referencia, orden relacionada y usuario que ejecuta el movimiento.
 
 ## Crear migracion en desarrollo
 
