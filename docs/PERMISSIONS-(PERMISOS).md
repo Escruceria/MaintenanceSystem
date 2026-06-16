@@ -24,10 +24,12 @@ Permisos principales:
 - Ubicaciones: lectura y escritura.
 - Activos: lectura y escritura.
 - Ordenes de trabajo: lectura, escritura, asignacion y cierre.
+- Ejecucion de ordenes: checklist, notas operativas y evidencias.
 - Planes de mantenimiento: lectura y escritura.
-- Solicitudes: lectura y escritura.
+- Solicitudes: lectura, escritura, revision y conversion a orden.
 - Inventario: lectura.
 - Proveedores: lectura.
+- Garantias: lectura y escritura.
 - Reportes: lectura.
 
 ### TECHNICIAN
@@ -38,7 +40,7 @@ Permisos principales:
 
 - Ubicaciones: lectura.
 - Activos: lectura.
-- Ordenes de trabajo: lectura y escritura.
+- Ordenes de trabajo: lectura, ejecucion operativa y evidencias.
 - Solicitudes: lectura.
 - Inventario: lectura.
 
@@ -58,7 +60,9 @@ Responsable de inventario.
 Permisos principales:
 
 - Inventario: lectura y escritura.
+- Kardex: ajustes y movimientos.
 - Proveedores: lectura y escritura.
+- Garantias: lectura y escritura.
 - Reportes: lectura.
 
 ### AUDITOR
@@ -68,6 +72,7 @@ Usuario auditor.
 Permisos principales:
 
 - Lectura transversal de usuarios, ubicaciones, activos, ordenes, planes, solicitudes, inventario, proveedores y reportes.
+- Lectura de garantias.
 - Auditoria: lectura.
 
 ### REPORT_VIEWER
@@ -95,19 +100,63 @@ Permisos principales:
 | `work-orders:read`        | Leer ordenes de trabajo, checklist y evidencias           |
 | `work-orders:write`       | Crear, actualizar ordenes, ejecutar checklist y registrar evidencias |
 | `work-orders:assign`      | Asignar ordenes de trabajo                                |
+| `work-orders:execute`     | Ejecutar checklist, notas y avance operativo de ordenes   |
 | `work-orders:close`       | Cerrar ordenes de trabajo                                 |
+| `work-orders:evidences:read` | Leer y descargar evidencias de ordenes de trabajo      |
+| `work-orders:evidences:write` | Registrar y cargar evidencias de ordenes de trabajo    |
+| `work-orders:evidences:void` | Anular evidencias de ordenes de trabajo                  |
 | `maintenance-plans:read`  | Leer planes de mantenimiento                              |
 | `maintenance-plans:write` | Crear y actualizar planes de mantenimiento                |
 | `requests:read`           | Leer solicitudes de servicio                              |
 | `requests:write`          | Crear y actualizar solicitudes de servicio                |
+| `requests:review`         | Revisar, aprobar, rechazar y cerrar solicitudes de servicio |
+| `requests:convert`        | Convertir solicitudes aprobadas en ordenes de trabajo     |
 | `inventory:read`          | Leer inventario y repuestos                               |
 | `inventory:write`         | Crear y actualizar inventario y repuestos                 |
+| `inventory:adjust`        | Ajustar existencias de inventario                         |
+| `inventory:move`          | Registrar movimientos de Kardex                           |
 | `suppliers:read`          | Leer proveedores                                          |
 | `suppliers:write`         | Crear y actualizar proveedores                            |
+| `warranties:read`         | Leer garantias de activos                                 |
+| `warranties:write`        | Crear, actualizar y cancelar garantias de activos         |
 | `reports:read`            | Leer reportes e indicadores                               |
 | `reports:export`          | Exportar reportes                                         |
 | `audit:read`              | Leer auditoria del sistema con filtros y paginacion       |
 | `settings:manage`         | Administrar configuracion del sistema                     |
+
+## Matriz por rol
+
+| Modulo / capacidad | ADMIN | MAINTENANCE_MANAGER | TECHNICIAN | REQUESTER | INVENTORY_MANAGER | AUDITOR | REPORT_VIEWER |
+| ------------------ | ----- | ------------------- | ---------- | --------- | ----------------- | ------- | ------------- |
+| Usuarios lectura | Si | Si | No | No | No | Si | No |
+| Usuarios escritura | Si | No | No | No | No | No | No |
+| Roles lectura/escritura | Si | No | No | No | No | No | No |
+| Ubicaciones lectura | Si | Si | Si | No | No | Si | No |
+| Ubicaciones escritura | Si | Si | No | No | No | No | No |
+| Activos lectura | Si | Si | Si | Si | No | Si | Si |
+| Activos escritura | Si | Si | No | No | No | No | No |
+| Ordenes lectura | Si | Si | Si | No | No | Si | Si |
+| Ordenes creacion/edicion | Si | Si | No | No | No | No | No |
+| Ordenes asignacion | Si | Si | No | No | No | No | No |
+| Ordenes ejecucion | Si | Si | Si | No | No | No | No |
+| Ordenes cierre | Si | Si | No | No | No | No | No |
+| Evidencias lectura/carga | Si | Si | Si | No | No | No | No |
+| Evidencias anulacion | Si | Si | No | No | No | No | No |
+| Planes lectura | Si | Si | No | No | No | Si | No |
+| Planes escritura | Si | Si | No | No | No | No | No |
+| Solicitudes lectura | Si | Si | Si | Si | No | Si | No |
+| Solicitudes creacion/edicion | Si | Si | No | Si | No | No | No |
+| Solicitudes revision/conversion | Si | Si | No | No | No | No | No |
+| Inventario lectura | Si | Si | Si | No | Si | Si | No |
+| Inventario escritura | Si | No | No | No | Si | No | No |
+| Inventario ajustes/Kardex | Si | No | No | No | Si | No | No |
+| Proveedores lectura | Si | Si | No | No | Si | Si | No |
+| Proveedores escritura | Si | No | No | No | Si | No | No |
+| Garantias lectura | Si | Si | No | No | Si | Si | No |
+| Garantias escritura | Si | Si | No | No | Si | No | No |
+| Reportes lectura | Si | Si | No | No | Si | Si | Si |
+| Auditoria lectura | Si | No | No | No | No | Si | No |
+| Configuracion | Si | No | No | No | No | No | No |
 
 ## Endpoints protegidos actualmente
 
@@ -145,16 +194,16 @@ Permisos principales:
 | `GET /api/work-orders/:id`                             | `work-orders:read`                              |
 | `PATCH /api/work-orders/:id`                           | `work-orders:write`                             |
 | `PATCH /api/work-orders/:id/assign`                    | `work-orders:assign`                            |
-| `PATCH /api/work-orders/:id/status`                    | `work-orders:write`                             |
+| `PATCH /api/work-orders/:id/status`                    | `work-orders:execute`                           |
 | `PUT /api/work-orders/:id/spare-parts`                 | `work-orders:write`                             |
 | `GET /api/work-orders/:id/checklist`                   | `work-orders:read`                              |
-| `PATCH /api/work-orders/:id/checklist/:itemId`         | `work-orders:write`                             |
-| `PATCH /api/work-orders/:id/execution-notes`           | `work-orders:write`                             |
-| `GET /api/work-orders/:id/evidences`                   | `work-orders:read`                              |
-| `GET /api/work-orders/:id/evidences/:evidenceId/download` | `work-orders:read`                           |
-| `POST /api/work-orders/:id/evidences`                  | `work-orders:write`                             |
-| `POST /api/work-orders/:id/evidences/upload`           | `work-orders:write`                             |
-| `DELETE /api/work-orders/:id/evidences/:evidenceId`    | `work-orders:write`                             |
+| `PATCH /api/work-orders/:id/checklist/:itemId`         | `work-orders:execute`                           |
+| `PATCH /api/work-orders/:id/execution-notes`           | `work-orders:execute`                           |
+| `GET /api/work-orders/:id/evidences`                   | `work-orders:evidences:read`                    |
+| `GET /api/work-orders/:id/evidences/:evidenceId/download` | `work-orders:evidences:read`                 |
+| `POST /api/work-orders/:id/evidences`                  | `work-orders:evidences:write`                   |
+| `POST /api/work-orders/:id/evidences/upload`           | `work-orders:evidences:write`                   |
+| `DELETE /api/work-orders/:id/evidences/:evidenceId`    | `work-orders:evidences:void`                    |
 | `PATCH /api/work-orders/:id/close`                     | `work-orders:close`                             |
 | `PATCH /api/work-orders/:id/cancel`                    | `work-orders:write`                             |
 | `POST /api/maintenance-plans`                          | `maintenance-plans:write`                       |
@@ -176,18 +225,18 @@ Permisos principales:
 | `GET /api/requests`                                    | `requests:read`                                 |
 | `GET /api/requests/:id`                                | `requests:read`                                 |
 | `PATCH /api/requests/:id`                              | `requests:write`                                |
-| `PATCH /api/requests/:id/review`                       | `requests:write`                                |
-| `PATCH /api/requests/:id/approve`                      | `requests:write`                                |
-| `PATCH /api/requests/:id/reject`                       | `requests:write`                                |
-| `PATCH /api/requests/:id/close`                        | `requests:write`                                |
-| `POST /api/requests/:id/convert-to-work-order`         | `requests:write`                                |
+| `PATCH /api/requests/:id/review`                       | `requests:review`                               |
+| `PATCH /api/requests/:id/approve`                      | `requests:review`                               |
+| `PATCH /api/requests/:id/reject`                       | `requests:review`                               |
+| `PATCH /api/requests/:id/close`                        | `requests:review`                               |
+| `POST /api/requests/:id/convert-to-work-order`         | `requests:convert` y `work-orders:write`        |
 | `POST /api/inventory/spare-parts`                      | `inventory:write`                               |
 | `GET /api/inventory/spare-parts`                       | `inventory:read`                                |
 | `GET /api/inventory/spare-parts/low-stock`             | `inventory:read`                                |
 | `GET /api/inventory/spare-parts/:id`                   | `inventory:read`                                |
 | `PATCH /api/inventory/spare-parts/:id`                 | `inventory:write`                               |
-| `PATCH /api/inventory/spare-parts/:id/stock`           | `inventory:write`                               |
-| `POST /api/inventory/spare-parts/:id/movements`        | `inventory:write`                               |
+| `PATCH /api/inventory/spare-parts/:id/stock`           | `inventory:adjust`                              |
+| `POST /api/inventory/spare-parts/:id/movements`        | `inventory:move`                                |
 | `GET /api/inventory/spare-parts/:id/movements`         | `inventory:read`                                |
 | `DELETE /api/inventory/spare-parts/:id`                | `inventory:write`                               |
 | `POST /api/suppliers`                                  | `suppliers:write`                               |
@@ -196,16 +245,38 @@ Permisos principales:
 | `PATCH /api/suppliers/:id`                             | `suppliers:write`                               |
 | `PATCH /api/suppliers/:id/activate`                    | `suppliers:write`                               |
 | `PATCH /api/suppliers/:id/deactivate`                  | `suppliers:write`                               |
-| `POST /api/suppliers/warranties`                       | `suppliers:write`                               |
-| `GET /api/suppliers/warranties`                        | `suppliers:read`                                |
-| `GET /api/suppliers/warranties/expiring`               | `suppliers:read`                                |
-| `GET /api/suppliers/assets/:assetId/warranties`        | `suppliers:read`                                |
-| `PATCH /api/suppliers/warranties/:id`                  | `suppliers:write`                               |
-| `PATCH /api/suppliers/warranties/:id/cancel`           | `suppliers:write`                               |
+| `POST /api/suppliers/warranties`                       | `warranties:write`                              |
+| `GET /api/suppliers/warranties`                        | `warranties:read`                               |
+| `GET /api/suppliers/warranties/expiring`               | `warranties:read`                               |
+| `GET /api/suppliers/assets/:assetId/warranties`        | `warranties:read`                               |
+| `PATCH /api/suppliers/warranties/:id`                  | `warranties:write`                              |
+| `PATCH /api/suppliers/warranties/:id/cancel`           | `warranties:write`                              |
 | `GET /api/reports/summary`                             | `reports:read`                                  |
 | `GET /api/audit`                                       | `audit:read`                                    |
 
 La ruta `GET /api/audit` permite filtrar por `actorId`, `action`, `entityType`, `entityId`, `from`, `to`, `page` y `limit`.
+
+## Preparacion para frontend
+
+El login y `GET /api/auth/me` devuelven el usuario autenticado con:
+
+```json
+{
+  "sub": "...",
+  "email": "admin@maintenance.local",
+  "name": "Administrador",
+  "roles": ["ADMIN"],
+  "permissions": ["assets:read", "work-orders:read"]
+}
+```
+
+El frontend debe:
+
+- Usar `permissions` para mostrar u ocultar menus, botones y acciones.
+- No confiar solo en el frontend: el backend siempre valida con `PermissionsGuard`.
+- Usar el catalogo tipado `apps/web/src/lib/permissions.ts` para evitar strings duplicados.
+- Tratar permisos compuestos como reglas `AND` cuando el endpoint declare mas de un permiso, por ejemplo convertir solicitudes requiere `requests:convert` y `work-orders:write`.
+- Refrescar permisos despues de cambios de rol cerrando sesion o consultando nuevamente `GET /api/auth/me`.
 
 ## Reglas de implementacion
 

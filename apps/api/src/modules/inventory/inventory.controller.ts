@@ -64,7 +64,7 @@ export class InventoryController {
     return this.inventory.updateSparePart(id, dto, user);
   }
 
-  @Permissions("inventory:write")
+  @Permissions("inventory:adjust")
   @Patch("spare-parts/:id/stock")
   adjustStock(
     @Param("id") id: string,
@@ -74,7 +74,7 @@ export class InventoryController {
     return this.inventory.adjustStock(id, dto, user);
   }
 
-  @Permissions("inventory:write")
+  @Permissions("inventory:move")
   @Post("spare-parts/:id/movements")
   createMovement(
     @Param("id") id: string,

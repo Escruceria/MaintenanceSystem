@@ -49,7 +49,7 @@ export class RequestsController {
     return this.requests.update(id, dto, user);
   }
 
-  @Permissions("requests:write")
+  @Permissions("requests:review")
   @Patch(":id/review")
   markInReview(
     @Param("id") id: string,
@@ -58,7 +58,7 @@ export class RequestsController {
     return this.requests.markInReview(id, user);
   }
 
-  @Permissions("requests:write")
+  @Permissions("requests:review")
   @Patch(":id/approve")
   approve(
     @Param("id") id: string,
@@ -68,7 +68,7 @@ export class RequestsController {
     return this.requests.approve(id, dto, user);
   }
 
-  @Permissions("requests:write")
+  @Permissions("requests:review")
   @Patch(":id/reject")
   reject(
     @Param("id") id: string,
@@ -78,7 +78,7 @@ export class RequestsController {
     return this.requests.reject(id, dto, user);
   }
 
-  @Permissions("requests:write")
+  @Permissions("requests:review")
   @Patch(":id/close")
   close(
     @Param("id") id: string,
@@ -88,7 +88,7 @@ export class RequestsController {
     return this.requests.close(id, dto, user);
   }
 
-  @Permissions("requests:write")
+  @Permissions("requests:convert", "work-orders:write")
   @Post(":id/convert-to-work-order")
   convertToWorkOrder(
     @Param("id") id: string,

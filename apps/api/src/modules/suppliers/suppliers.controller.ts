@@ -42,7 +42,7 @@ export class SuppliersController {
     return this.suppliers.findAll();
   }
 
-  @Permissions("suppliers:write")
+  @Permissions("warranties:write")
   @Post("warranties")
   createWarranty(
     @Body() dto: CreateAssetWarrantyDto,
@@ -51,13 +51,13 @@ export class SuppliersController {
     return this.suppliers.createWarranty(dto, user);
   }
 
-  @Permissions("suppliers:read")
+  @Permissions("warranties:read")
   @Get("warranties")
   findWarranties() {
     return this.suppliers.findWarranties();
   }
 
-  @Permissions("suppliers:read")
+  @Permissions("warranties:read")
   @Get("warranties/expiring")
   findExpiringWarranties(@Query("days") days?: string) {
     return this.suppliers.findExpiringWarranties(
@@ -65,13 +65,13 @@ export class SuppliersController {
     );
   }
 
-  @Permissions("suppliers:read")
+  @Permissions("warranties:read")
   @Get("assets/:assetId/warranties")
   findAssetWarranties(@Param("assetId") assetId: string) {
     return this.suppliers.findAssetWarranties(assetId);
   }
 
-  @Permissions("suppliers:write")
+  @Permissions("warranties:write")
   @Patch("warranties/:id")
   updateWarranty(
     @Param("id") id: string,
@@ -81,7 +81,7 @@ export class SuppliersController {
     return this.suppliers.updateWarranty(id, dto, user);
   }
 
-  @Permissions("suppliers:write")
+  @Permissions("warranties:write")
   @Patch("warranties/:id/cancel")
   cancelWarranty(
     @Param("id") id: string,

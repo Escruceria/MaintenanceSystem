@@ -143,7 +143,7 @@ export class WorkOrdersController {
     return this.workOrders.assign(id, dto, user);
   }
 
-  @Permissions("work-orders:write")
+  @Permissions("work-orders:execute")
   @Patch(":id/status")
   changeStatus(
     @Param("id") id: string,
@@ -169,7 +169,7 @@ export class WorkOrdersController {
     return this.workOrders.getChecklist(id);
   }
 
-  @Permissions("work-orders:write")
+  @Permissions("work-orders:execute")
   @Patch(":id/checklist/:itemId")
   updateChecklistItem(
     @Param("id") id: string,
@@ -180,7 +180,7 @@ export class WorkOrdersController {
     return this.workOrders.updateChecklistItem(id, itemId, dto, user);
   }
 
-  @Permissions("work-orders:write")
+  @Permissions("work-orders:execute")
   @Patch(":id/execution-notes")
   updateExecutionNotes(
     @Param("id") id: string,
@@ -190,13 +190,13 @@ export class WorkOrdersController {
     return this.workOrders.updateExecutionNotes(id, dto, user);
   }
 
-  @Permissions("work-orders:read")
+  @Permissions("work-orders:evidences:read")
   @Get(":id/evidences")
   getEvidences(@Param("id") id: string) {
     return this.workOrders.getEvidences(id);
   }
 
-  @Permissions("work-orders:read")
+  @Permissions("work-orders:evidences:read")
   @Get(":id/evidences/:evidenceId/download")
   async downloadEvidence(
     @Param("id") id: string,
@@ -216,7 +216,7 @@ export class WorkOrdersController {
     return new StreamableFile(createReadStream(file.path));
   }
 
-  @Permissions("work-orders:write")
+  @Permissions("work-orders:evidences:write")
   @Post(":id/evidences")
   addEvidence(
     @Param("id") id: string,
@@ -226,7 +226,7 @@ export class WorkOrdersController {
     return this.workOrders.addEvidence(id, dto, user);
   }
 
-  @Permissions("work-orders:write")
+  @Permissions("work-orders:evidences:write")
   @Post(":id/evidences/upload")
   @UseInterceptors(evidenceFileInterceptor)
   @ApiConsumes("multipart/form-data")
@@ -262,7 +262,7 @@ export class WorkOrdersController {
     });
   }
 
-  @Permissions("work-orders:write")
+  @Permissions("work-orders:evidences:void")
   @Delete(":id/evidences/:evidenceId")
   voidEvidence(
     @Param("id") id: string,
