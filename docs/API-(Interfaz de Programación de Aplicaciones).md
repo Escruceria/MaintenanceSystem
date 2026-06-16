@@ -494,6 +494,91 @@ Reglas:
 - Las evidencias conservan usuario que las registro y fecha de creacion.
 - No se pueden agregar evidencias ni notas sobre ordenes canceladas.
 
+## Solicitudes de servicio
+
+Las solicitudes de servicio permiten registrar necesidades operativas antes de crear una orden de trabajo. El flujo recomendado es: crear solicitud, revisar, aprobar y convertir a orden.
+
+Crear solicitud:
+
+```powershell
+curl.exe -X POST http://localhost:4000/api/requests `
+  -H "Content-Type: application/json" `
+  -H "Authorization: Bearer <accessToken>" `
+  -d "{\"title\":\"Falla en sistema de bombeo\",\"description\":\"Ruido anormal y perdida de presion\",\"priority\":\"HIGH\",\"assetId\":\"<assetId>\"}"
+```
+
+Listar solicitudes:
+
+```powershell
+curl.exe http://localhost:4000/api/requests -H "Authorization: Bearer <accessToken>"
+```
+
+Consultar solicitud:
+
+```powershell
+curl.exe http://localhost:4000/api/requests/<requestId> -H "Authorization: Bearer <accessToken>"
+```
+
+Actualizar solicitud:
+
+```powershell
+curl.exe -X PATCH http://localhost:4000/api/requests/<requestId> `
+  -H "Content-Type: application/json" `
+  -H "Authorization: Bearer <accessToken>" `
+  -d "{\"priority\":\"CRITICAL\",\"description\":\"Falla recurrente reportada por operacion\"}"
+```
+
+Marcar en revision:
+
+```powershell
+curl.exe -X PATCH http://localhost:4000/api/requests/<requestId>/review -H "Authorization: Bearer <accessToken>"
+```
+
+Aprobar solicitud:
+
+```powershell
+curl.exe -X PATCH http://localhost:4000/api/requests/<requestId>/approve `
+  -H "Content-Type: application/json" `
+  -H "Authorization: Bearer <accessToken>" `
+  -d "{\"resolution\":\"Procede generar orden de trabajo\"}"
+```
+
+Rechazar solicitud:
+
+```powershell
+curl.exe -X PATCH http://localhost:4000/api/requests/<requestId>/reject `
+  -H "Content-Type: application/json" `
+  -H "Authorization: Bearer <accessToken>" `
+  -d "{\"resolution\":\"No aplica mantenimiento, se escala a otra area\"}"
+```
+
+Cerrar solicitud sin orden:
+
+```powershell
+curl.exe -X PATCH http://localhost:4000/api/requests/<requestId>/close `
+  -H "Content-Type: application/json" `
+  -H "Authorization: Bearer <accessToken>" `
+  -d "{\"resolution\":\"Atendida sin requerir orden de trabajo\"}"
+```
+
+Convertir solicitud aprobada en orden:
+
+```powershell
+curl.exe -X POST http://localhost:4000/api/requests/<requestId>/convert-to-work-order `
+  -H "Content-Type: application/json" `
+  -H "Authorization: Bearer <accessToken>" `
+  -d "{\"type\":\"CORRECTIVE\",\"priority\":\"HIGH\",\"scheduledAt\":\"2026-06-20T14:00:00.000Z\"}"
+```
+
+Reglas:
+
+- Las solicitudes usan estados `OPEN`, `IN_REVIEW`, `APPROVED`, `REJECTED`, `CONVERTED` y `CLOSED`.
+- Las solicitudes en estado terminal no se pueden editar.
+- Solo solicitudes aprobadas pueden convertirse en orden de trabajo.
+- Para convertir una solicitud debe existir un activo activo asociado, ya sea en la solicitud o en el cuerpo de conversion.
+- La conversion crea la orden y marca la solicitud como `CONVERTED` en una misma transaccion.
+- La conversion genera auditoria `SERVICE_REQUEST_CONVERTED` y tambien registra la creacion de orden `WORK_ORDER_CREATED`.
+
 ## Inventario y repuestos
 
 Los repuestos son elementos consumibles o piezas usadas por las ordenes de trabajo.
@@ -867,7 +952,15 @@ Eventos automaticos iniciales:
 - `DELETE /api/maintenance-plans/:id/assets/:assetId`
 - `POST /api/maintenance-plans/:id/generate-work-orders`
 - `DELETE /api/maintenance-plans/:id`
+- `POST /api/requests`
 - `GET /api/requests`
+- `GET /api/requests/:id`
+- `PATCH /api/requests/:id`
+- `PATCH /api/requests/:id/review`
+- `PATCH /api/requests/:id/approve`
+- `PATCH /api/requests/:id/reject`
+- `PATCH /api/requests/:id/close`
+- `POST /api/requests/:id/convert-to-work-order`
 - `POST /api/inventory/spare-parts`
 - `GET /api/inventory/spare-parts`
 - `GET /api/inventory/spare-parts/low-stock`

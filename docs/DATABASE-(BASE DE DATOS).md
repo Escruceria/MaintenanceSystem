@@ -51,6 +51,7 @@ Notas recientes:
 
 - `WorkOrderEvidence` conserva anulaciones mediante `voidedAt`, `voidedById` y `voidReason`.
 - La anulacion de evidencias es logica para mantener trazabilidad; si existe archivo local, la API intenta eliminar el archivo fisico.
+- `ServiceRequest` maneja flujo operativo con `status`, `priority`, fechas de revision/aprobacion/rechazo/cierre/conversion y referencia opcional a `workOrderId`.
 
 ## Crear migracion en desarrollo
 

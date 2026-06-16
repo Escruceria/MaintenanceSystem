@@ -72,6 +72,15 @@ enum UserInvitationStatus {
   EXPIRED
 }
 
+enum ServiceRequestStatus {
+  OPEN
+  IN_REVIEW
+  APPROVED
+  REJECTED
+  CONVERTED
+  CLOSED
+}
+
 enum LocationType {
   SITE
   BUILDING
@@ -239,6 +248,7 @@ model WorkOrder {
   spareParts           WorkOrderPart[]
   checklistItems       WorkOrderChecklistItem[]
   evidences            WorkOrderEvidence[]
+  serviceRequest       ServiceRequest?
   createdAt            DateTime                 @default(now())
   updatedAt            DateTime                 @updatedAt
 }
@@ -347,15 +357,30 @@ model MaintenancePlanAsset {
 }
 
 model ServiceRequest {
-  id          String   @id @default(uuid())
+  id          String               @id @default(uuid())
   title       String
   description String?
+  priority    WorkOrderPriority    @default(MEDIUM)
+  status      ServiceRequestStatus @default(OPEN)
   assetId     String?
-  asset       Asset?   @relation(fields: [assetId], references: [id])
+  asset       Asset?               @relation(fields: [assetId], references: [id])
   requesterId String?
-  requester   User?    @relation(fields: [requesterId], references: [id])
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  requester   User?                @relation(fields: [requesterId], references: [id])
+  workOrderId String?              @unique
+  workOrder   WorkOrder?           @relation(fields: [workOrderId], references: [id])
+  reviewedAt  DateTime?
+  approvedAt  DateTime?
+  rejectedAt  DateTime?
+  closedAt    DateTime?
+  convertedAt DateTime?
+  resolution   String?
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+
+  @@index([status])
+  @@index([priority])
+  @@index([assetId])
+  @@index([requesterId])
 }
 
 model SparePart {

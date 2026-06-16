@@ -384,6 +384,29 @@ Reglas implementadas:
 - Ajustes de stock sin permitir inventario negativo.
 - Bloqueo de eliminacion cuando el repuesto ya fue usado en ordenes.
 
+## Fase 8.1 - Solicitudes de servicio
+
+Objetivo: registrar necesidades de mantenimiento antes de crear ordenes de trabajo y convertir solicitudes aprobadas en ordenes reales.
+
+Estado actual:
+
+- Crear solicitudes asociadas opcionalmente a activos. Estado: implementado.
+- Listar y consultar solicitudes. Estado: implementado.
+- Actualizar solicitudes no terminales. Estado: implementado.
+- Marcar solicitudes en revision. Estado: implementado.
+- Aprobar, rechazar y cerrar solicitudes. Estado: implementado.
+- Convertir solicitudes aprobadas en ordenes de trabajo. Estado: implementado.
+- Auditar creacion, actualizacion, cambios de estado y conversion. Estado: implementado.
+
+Reglas implementadas:
+
+- Estados: `OPEN`, `IN_REVIEW`, `APPROVED`, `REJECTED`, `CONVERTED`, `CLOSED`.
+- Estados terminales: `REJECTED`, `CONVERTED`, `CLOSED`.
+- Solo solicitudes aprobadas pueden convertirse en orden.
+- La conversion exige activo activo asociado.
+- La conversion crea orden y actualiza solicitud en una misma transaccion.
+- La solicitud convertida conserva referencia a la orden generada.
+
 ## Fase 9 - Dashboard e indicadores
 
 Objetivo: mostrar indicadores reales desde PostgreSQL.

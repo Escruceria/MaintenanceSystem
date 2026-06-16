@@ -172,7 +172,15 @@ Permisos principales:
 | `DELETE /api/maintenance-plans/:id/assets/:assetId`    | `maintenance-plans:write`                       |
 | `POST /api/maintenance-plans/:id/generate-work-orders` | `maintenance-plans:write` y `work-orders:write` |
 | `DELETE /api/maintenance-plans/:id`                    | `maintenance-plans:write`                       |
+| `POST /api/requests`                                   | `requests:write`                                |
 | `GET /api/requests`                                    | `requests:read`                                 |
+| `GET /api/requests/:id`                                | `requests:read`                                 |
+| `PATCH /api/requests/:id`                              | `requests:write`                                |
+| `PATCH /api/requests/:id/review`                       | `requests:write`                                |
+| `PATCH /api/requests/:id/approve`                      | `requests:write`                                |
+| `PATCH /api/requests/:id/reject`                       | `requests:write`                                |
+| `PATCH /api/requests/:id/close`                        | `requests:write`                                |
+| `POST /api/requests/:id/convert-to-work-order`         | `requests:write`                                |
 | `POST /api/inventory/spare-parts`                      | `inventory:write`                               |
 | `GET /api/inventory/spare-parts`                       | `inventory:read`                                |
 | `GET /api/inventory/spare-parts/low-stock`             | `inventory:read`                                |
