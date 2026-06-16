@@ -442,9 +442,19 @@ Indicadores:
 - Planes de mantenimiento vencidos. Estado: implementado.
 - Proximos mantenimientos a 30 dias. Estado: implementado.
 - Tabla de vencimientos y proximos mantenimientos. Estado: implementado.
+- Total historico de activos y ordenes. Estado: implementado.
+- Ordenes cerradas del mes. Estado: implementado.
+- Distribucion de ordenes por estado. Estado: implementado.
+- Distribucion de ordenes por tipo de mantenimiento. Estado: implementado.
+- Distribucion de activos por estado operativo. Estado: implementado.
+- Distribucion de solicitudes por estado. Estado: implementado.
+- Solicitudes abiertas y pendientes. Estado: implementado.
+- Proveedores activos. Estado: implementado.
+- Garantias vigentes, proximas y vencidas. Estado: implementado.
+- Movimientos recientes de inventario/kardex. Estado: implementado.
 - Activos por categoria.
 - Activos criticos.
-- Activos fuera de servicio.
+- Activos fuera de servicio. Estado: implementado como conteo por estado.
 - Ordenes vencidas.
 - MTTR.
 - MTBF.
@@ -457,13 +467,14 @@ Entregables implementados:
 - Endpoint `GET /api/reports/summary` protegido por `reports:read`.
 - Dashboard Next.js consumiendo la API.
 - Conexion interna Docker entre `web` y `api` mediante `API_INTERNAL_URL`.
+- Dashboard gerencial ampliado con metricas operativas, solicitudes, inventario, garantias, proveedores y distribuciones basicas.
 
 Pendiente futuro:
 
 - Usar sesion real del usuario autenticado en frontend.
-- Agregar graficas, filtros por sede, fechas, categoria y criticidad.
+- Agregar graficas visuales, filtros por sede, fechas, categoria y criticidad.
 - Exportacion de reportes.
-- Indicadores avanzados cuando existan planes, medidores, costos e historial suficiente.
+- Indicadores avanzados cuando existan categorias, criticidad, mediciones, costos e historial suficiente.
 
 ## Fase 10 - Produccion
 

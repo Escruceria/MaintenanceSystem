@@ -1,9 +1,11 @@
 import {
   AlertTriangle,
   ClipboardList,
+  FileCheck2,
   Gauge,
   Package,
   QrCode,
+  ShieldCheck,
   Settings,
   Users,
   Wrench,
@@ -24,15 +26,34 @@ const navItems = [
 
 type DashboardSummary = {
   metrics: {
+    totalAssets: number;
     openWorkOrders: number;
     criticalWorkOrders: number;
+    totalWorkOrders: number;
+    completedWorkOrdersThisMonth: number;
     preventiveCompliance: number;
     assetsActive: number;
     assetsInMaintenance: number;
+    assetsOutOfService: number;
+    assetsRetired: number;
+    inventoryItems: number;
+    inventoryUnits: number;
     lowStockItems: number;
     urgentLowStockItems: number;
+    openServiceRequests: number;
+    pendingServiceRequests: number;
+    activeSuppliers: number;
+    activeWarranties: number;
+    expiringWarranties: number;
+    expiredWarranties: number;
     overdueMaintenancePlans: number;
     upcomingMaintenancePlans: number;
+  };
+  distribution: {
+    workOrdersByStatus: Record<string, number>;
+    workOrdersByType: Record<string, number>;
+    assetsByStatus: Record<string, number>;
+    requestsByStatus: Record<string, number>;
   };
   upcomingMaintenance: {
     id: string;
@@ -44,6 +65,36 @@ type DashboardSummary = {
     nextDueAt: string;
     assetsCount: number;
     status: string;
+  }[];
+  expiringWarranties: {
+    id: string;
+    title: string;
+    policyNumber: string | null;
+    endDate: string;
+    asset: {
+      id: string;
+      code: string;
+      name: string;
+    };
+    supplier: {
+      id: string;
+      name: string;
+    } | null;
+  }[];
+  recentInventoryMovements: {
+    id: string;
+    type: string;
+    quantity: number;
+    previousStock: number;
+    nextStock: number;
+    reason: string;
+    reference: string | null;
+    createdAt: string;
+    sparePart: {
+      id: string;
+      sku: string;
+      name: string;
+    };
   }[];
   recentWorkOrders: {
     id: string;
@@ -79,17 +130,38 @@ type DashboardState = {
 
 const emptyDashboard: DashboardSummary = {
   metrics: {
+    totalAssets: 0,
     openWorkOrders: 0,
     criticalWorkOrders: 0,
+    totalWorkOrders: 0,
+    completedWorkOrdersThisMonth: 0,
     preventiveCompliance: 0,
     assetsActive: 0,
     assetsInMaintenance: 0,
+    assetsOutOfService: 0,
+    assetsRetired: 0,
+    inventoryItems: 0,
+    inventoryUnits: 0,
     lowStockItems: 0,
     urgentLowStockItems: 0,
+    openServiceRequests: 0,
+    pendingServiceRequests: 0,
+    activeSuppliers: 0,
+    activeWarranties: 0,
+    expiringWarranties: 0,
+    expiredWarranties: 0,
     overdueMaintenancePlans: 0,
     upcomingMaintenancePlans: 0,
   },
+  distribution: {
+    workOrdersByStatus: {},
+    workOrdersByType: {},
+    assetsByStatus: {},
+    requestsByStatus: {},
+  },
   upcomingMaintenance: [],
+  expiringWarranties: [],
+  recentInventoryMovements: [],
   recentWorkOrders: [],
   priorities: [
     {
@@ -115,6 +187,37 @@ const statusLabels: Record<string, string> = {
   ON_HOLD: "En espera",
   COMPLETED: "Cerrada",
   CANCELLED: "Cancelada",
+};
+
+const assetStatusLabels: Record<string, string> = {
+  ACTIVE: "Activos",
+  IN_MAINTENANCE: "En mantenimiento",
+  OUT_OF_SERVICE: "Fuera de servicio",
+  RETIRED: "Retirados",
+};
+
+const requestStatusLabels: Record<string, string> = {
+  OPEN: "Abiertas",
+  IN_REVIEW: "En revision",
+  APPROVED: "Aprobadas",
+  REJECTED: "Rechazadas",
+  CONVERTED: "Convertidas",
+  CLOSED: "Cerradas",
+};
+
+const workOrderTypeLabels: Record<string, string> = {
+  CORRECTIVE: "Correctivas",
+  PREVENTIVE: "Preventivas",
+  PREDICTIVE: "Predictivas",
+  INSPECTION: "Inspecciones",
+};
+
+const movementTypeLabels: Record<string, string> = {
+  INITIAL: "Inicial",
+  IN: "Entrada",
+  OUT: "Salida",
+  ADJUSTMENT: "Ajuste",
+  WORK_ORDER_CONSUMPTION: "Consumo OT",
 };
 
 const frequencyLabels: Record<string, string> = {
@@ -201,29 +304,65 @@ const buildMetrics = (summary: DashboardSummary) => [
   {
     label: "Ordenes abiertas",
     value: String(summary.metrics.openWorkOrders),
-    note: `${summary.metrics.criticalWorkOrders} criticas`,
+    note: `${summary.metrics.criticalWorkOrders} criticas de ${summary.metrics.totalWorkOrders} totales`,
+    icon: ClipboardList,
   },
   {
     label: "Cumplimiento preventivo",
     value: `${summary.metrics.preventiveCompliance}%`,
     note: `${summary.metrics.overdueMaintenancePlans} vencidos`,
+    icon: Wrench,
   },
   {
-    label: "Equipos activos",
+    label: "Activos operativos",
     value: String(summary.metrics.assetsActive),
-    note: `${summary.metrics.assetsInMaintenance} en mantenimiento`,
+    note: `${summary.metrics.assetsInMaintenance} en mantenimiento de ${summary.metrics.totalAssets}`,
+    icon: QrCode,
   },
   {
     label: "Repuestos bajos",
     value: String(summary.metrics.lowStockItems),
     note: `${summary.metrics.urgentLowStockItems} agotados`,
+    icon: Package,
   },
   {
-    label: "Proximos mantenimientos",
-    value: String(summary.metrics.upcomingMaintenancePlans),
-    note: "Vencen en los proximos 30 dias",
+    label: "Solicitudes abiertas",
+    value: String(summary.metrics.openServiceRequests),
+    note: `${summary.metrics.pendingServiceRequests} pendientes de gestion`,
+    icon: FileCheck2,
+  },
+  {
+    label: "Garantias vigentes",
+    value: String(summary.metrics.activeWarranties),
+    note: `${summary.metrics.expiringWarranties} vencen en 30 dias`,
+    icon: ShieldCheck,
+  },
+  {
+    label: "Proveedores activos",
+    value: String(summary.metrics.activeSuppliers),
+    note: "Base de soporte y garantias",
+    icon: Users,
+  },
+  {
+    label: "Cierres del mes",
+    value: String(summary.metrics.completedWorkOrdersThisMonth),
+    note: "Ordenes completadas este mes",
+    icon: Gauge,
   },
 ];
+
+const buildDistribution = (
+  title: string,
+  data: Record<string, number>,
+  labels: Record<string, string>,
+) => ({
+  title,
+  rows: Object.entries(labels).map(([key, label]) => ({
+    key,
+    label,
+    value: data[key] ?? 0,
+  })),
+});
 
 const formatDate = (value: string) =>
   new Intl.DateTimeFormat("es-CO", {
@@ -235,6 +374,28 @@ const formatDate = (value: string) =>
 export default async function Home() {
   const dashboard = await getDashboardData();
   const metrics = buildMetrics(dashboard.data);
+  const distributions = [
+    buildDistribution(
+      "Ordenes por estado",
+      dashboard.data.distribution.workOrdersByStatus,
+      statusLabels,
+    ),
+    buildDistribution(
+      "Ordenes por tipo",
+      dashboard.data.distribution.workOrdersByType,
+      workOrderTypeLabels,
+    ),
+    buildDistribution(
+      "Activos por estado",
+      dashboard.data.distribution.assetsByStatus,
+      assetStatusLabels,
+    ),
+    buildDistribution(
+      "Solicitudes por estado",
+      dashboard.data.distribution.requestsByStatus,
+      requestStatusLabels,
+    ),
+  ];
 
   return (
     <main className="min-h-screen">
@@ -274,11 +435,11 @@ export default async function Home() {
           <header className="mb-6 flex flex-col gap-4 border-b border-line pb-5 md:flex-row md:items-center md:justify-between">
             <div>
               <h1 className="text-2xl font-semibold tracking-normal">
-                Centro de mantenimiento
+                Dashboard gerencial
               </h1>
               <p className="mt-1 text-sm text-slate-500">
-                Vista operacional para activos, ordenes, preventivos e
-                inventario.
+                Indicadores reales de activos, ordenes, solicitudes,
+                inventario, proveedores y garantias.
               </p>
               {!dashboard.isConnected ? (
                 <p className="mt-2 text-sm text-amber-700">
@@ -296,16 +457,41 @@ export default async function Home() {
             </div>
           </header>
 
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             {metrics.map((metric) => (
               <article
                 key={metric.label}
                 className="rounded border border-line bg-white p-4"
               >
-                <p className="text-sm text-slate-500">{metric.label}</p>
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-sm text-slate-500">{metric.label}</p>
+                  <metric.icon size={18} className="text-brand" />
+                </div>
                 <p className="mt-3 text-3xl font-semibold">{metric.value}</p>
                 <p className="mt-2 text-sm text-brand">{metric.note}</p>
               </article>
+            ))}
+          </div>
+
+          <div className="mt-6 grid gap-4 xl:grid-cols-4">
+            {distributions.map((group) => (
+              <section
+                key={group.title}
+                className="rounded border border-line bg-white p-4"
+              >
+                <h2 className="text-sm font-semibold">{group.title}</h2>
+                <div className="mt-4 grid gap-3">
+                  {group.rows.map((row) => (
+                    <div
+                      key={row.key}
+                      className="flex items-center justify-between gap-3 text-sm"
+                    >
+                      <span className="text-slate-500">{row.label}</span>
+                      <span className="font-semibold">{row.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </section>
             ))}
           </div>
 
@@ -432,6 +618,113 @@ export default async function Home() {
                     <p className="mt-1 text-slate-500">{priority.detail}</p>
                   </div>
                 ))}
+              </div>
+            </section>
+          </div>
+
+          <div className="mt-6 grid gap-6 xl:grid-cols-2">
+            <section className="rounded border border-line bg-white">
+              <div className="border-b border-line px-4 py-3">
+                <h2 className="text-base font-semibold">
+                  Garantias proximas a vencer
+                </h2>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[620px] border-collapse text-sm">
+                  <thead className="bg-field text-left text-slate-500">
+                    <tr>
+                      <th className="px-4 py-3 font-medium">Activo</th>
+                      <th className="px-4 py-3 font-medium">Garantia</th>
+                      <th className="px-4 py-3 font-medium">Proveedor</th>
+                      <th className="px-4 py-3 font-medium">Vence</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {dashboard.data.expiringWarranties.map((warranty) => (
+                      <tr key={warranty.id} className="border-t border-line">
+                        <td className="px-4 py-3">
+                          <span className="block font-medium">
+                            {warranty.asset.name}
+                          </span>
+                          <span className="text-xs text-slate-500">
+                            {warranty.asset.code}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="block">{warranty.title}</span>
+                          <span className="text-xs text-slate-500">
+                            {warranty.policyNumber ?? "Sin poliza"}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          {warranty.supplier?.name ?? "Sin proveedor"}
+                        </td>
+                        <td className="px-4 py-3">
+                          {formatDate(warranty.endDate)}
+                        </td>
+                      </tr>
+                    ))}
+                    {dashboard.data.expiringWarranties.length === 0 ? (
+                      <tr className="border-t border-line">
+                        <td className="px-4 py-6 text-slate-500" colSpan={4}>
+                          No hay garantias proximas a vencer en los siguientes
+                          30 dias.
+                        </td>
+                      </tr>
+                    ) : null}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+
+            <section className="rounded border border-line bg-white">
+              <div className="border-b border-line px-4 py-3">
+                <h2 className="text-base font-semibold">
+                  Movimientos recientes de inventario
+                </h2>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[620px] border-collapse text-sm">
+                  <thead className="bg-field text-left text-slate-500">
+                    <tr>
+                      <th className="px-4 py-3 font-medium">Repuesto</th>
+                      <th className="px-4 py-3 font-medium">Tipo</th>
+                      <th className="px-4 py-3 font-medium">Cantidad</th>
+                      <th className="px-4 py-3 font-medium">Stock</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {dashboard.data.recentInventoryMovements.map(
+                      (movement) => (
+                        <tr key={movement.id} className="border-t border-line">
+                          <td className="px-4 py-3">
+                            <span className="block font-medium">
+                              {movement.sparePart.name}
+                            </span>
+                            <span className="text-xs text-slate-500">
+                              {movement.sparePart.sku}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3">
+                            {movementTypeLabels[movement.type] ??
+                              movement.type}
+                          </td>
+                          <td className="px-4 py-3">{movement.quantity}</td>
+                          <td className="px-4 py-3">
+                            {movement.previousStock} a {movement.nextStock}
+                          </td>
+                        </tr>
+                      ),
+                    )}
+                    {dashboard.data.recentInventoryMovements.length === 0 ? (
+                      <tr className="border-t border-line">
+                        <td className="px-4 py-6 text-slate-500" colSpan={4}>
+                          No hay movimientos de inventario registrados.
+                        </td>
+                      </tr>
+                    ) : null}
+                  </tbody>
+                </table>
               </div>
             </section>
           </div>

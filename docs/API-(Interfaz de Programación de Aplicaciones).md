@@ -909,15 +909,58 @@ Respuesta esperada:
 ```json
 {
   "metrics": {
+    "totalAssets": 0,
     "openWorkOrders": 0,
     "criticalWorkOrders": 0,
+    "totalWorkOrders": 0,
+    "completedWorkOrdersThisMonth": 0,
     "preventiveCompliance": 100,
     "assetsActive": 0,
     "assetsInMaintenance": 0,
+    "assetsOutOfService": 0,
+    "assetsRetired": 0,
+    "inventoryItems": 0,
+    "inventoryUnits": 0,
     "lowStockItems": 0,
     "urgentLowStockItems": 0,
+    "openServiceRequests": 0,
+    "pendingServiceRequests": 0,
+    "activeSuppliers": 0,
+    "activeWarranties": 0,
+    "expiringWarranties": 0,
+    "expiredWarranties": 0,
     "overdueMaintenancePlans": 0,
     "upcomingMaintenancePlans": 0
+  },
+  "distribution": {
+    "workOrdersByStatus": {
+      "OPEN": 0,
+      "ASSIGNED": 0,
+      "IN_PROGRESS": 0,
+      "ON_HOLD": 0,
+      "COMPLETED": 0,
+      "CANCELLED": 0
+    },
+    "workOrdersByType": {
+      "CORRECTIVE": 0,
+      "PREVENTIVE": 0,
+      "PREDICTIVE": 0,
+      "INSPECTION": 0
+    },
+    "assetsByStatus": {
+      "ACTIVE": 0,
+      "IN_MAINTENANCE": 0,
+      "OUT_OF_SERVICE": 0,
+      "RETIRED": 0
+    },
+    "requestsByStatus": {
+      "OPEN": 0,
+      "IN_REVIEW": 0,
+      "APPROVED": 0,
+      "REJECTED": 0,
+      "CONVERTED": 0,
+      "CLOSED": 0
+    }
   },
   "upcomingMaintenance": [
     {
@@ -930,6 +973,40 @@ Respuesta esperada:
       "nextDueAt": "2026-06-15T08:00:00.000Z",
       "assetsCount": 2,
       "status": "UPCOMING"
+    }
+  ],
+  "expiringWarranties": [
+    {
+      "id": "...",
+      "title": "Garantia fabricante",
+      "policyNumber": "POL-001",
+      "endDate": "2026-06-30T08:00:00.000Z",
+      "asset": {
+        "id": "...",
+        "code": "ACT-001",
+        "name": "Bomba principal"
+      },
+      "supplier": {
+        "id": "...",
+        "name": "Proveedor Industrial S.A.S."
+      }
+    }
+  ],
+  "recentInventoryMovements": [
+    {
+      "id": "...",
+      "type": "WORK_ORDER_CONSUMPTION",
+      "quantity": 2,
+      "previousStock": 10,
+      "nextStock": 8,
+      "reason": "Consumo en orden de trabajo",
+      "reference": "OT-2026-0001",
+      "createdAt": "2026-06-15T08:00:00.000Z",
+      "sparePart": {
+        "id": "...",
+        "sku": "REP-001",
+        "name": "Rodamiento"
+      }
     }
   ],
   "recentWorkOrders": [],
@@ -945,16 +1022,32 @@ Respuesta esperada:
 
 Metricas calculadas:
 
+- Total de activos: todos los activos registrados.
 - Ordenes abiertas: ordenes en estado `OPEN`, `ASSIGNED`, `IN_PROGRESS` u `ON_HOLD`.
 - Ordenes criticas: ordenes abiertas con prioridad `CRITICAL`.
+- Ordenes totales: total historico de ordenes registradas.
+- Ordenes cerradas del mes: ordenes `COMPLETED` con `completedAt` dentro del mes actual.
 - Cumplimiento preventivo: ordenes preventivas completadas contra ordenes preventivas creadas en el mes.
 - Equipos activos: activos en estado `ACTIVE`.
 - Equipos en mantenimiento: activos en estado `IN_MAINTENANCE`.
+- Activos fuera de servicio: activos en estado `OUT_OF_SERVICE`.
+- Activos retirados: activos en estado `RETIRED`.
+- Items de inventario: total de repuestos registrados.
+- Unidades de inventario: suma de existencias (`stock`) de repuestos.
 - Repuestos bajos: repuestos con `stock <= minimumStock`.
 - Repuestos agotados: repuestos con `stock = 0`.
+- Solicitudes abiertas: solicitudes en estado `OPEN`, `IN_REVIEW` o `APPROVED`.
+- Solicitudes pendientes: solicitudes en estado `OPEN` o `IN_REVIEW`.
+- Proveedores activos: proveedores con `isActive = true`.
+- Garantias vigentes: garantias `ACTIVE` con fecha final igual o posterior a la fecha actual.
+- Garantias proximas: garantias `ACTIVE` que vencen en los proximos 30 dias.
+- Garantias vencidas: garantias `EXPIRED` o garantias `ACTIVE` con fecha final anterior a la fecha actual.
 - Planes vencidos: planes activos con `nextDueAt` anterior a la fecha actual.
 - Proximos mantenimientos: planes activos con `nextDueAt` dentro de los proximos 30 dias.
 - Vencimientos del dashboard: listado de hasta 8 planes activos vencidos o proximos, ordenados por `nextDueAt`.
+- Distribuciones: agrupaciones de ordenes, activos y solicitudes por estado o tipo.
+- Garantias proximas: listado de hasta 8 garantias activas que vencen en los proximos 30 dias.
+- Movimientos recientes de inventario: ultimos 8 movimientos del kardex.
 
 En Docker, el frontend usa `API_INTERNAL_URL=http://api:4000/api` para consultar la API desde la red interna de contenedores. Las variables `DASHBOARD_ADMIN_EMAIL` y `DASHBOARD_ADMIN_PASSWORD` solo son una ayuda de desarrollo para obtener un JWT y consumir el endpoint protegido. En produccion el dashboard debe usar la sesion real del usuario autenticado.
 
